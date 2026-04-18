@@ -1,0 +1,1384 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>아카이브</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f5f4f0;
+    --surface: #ffffff;
+    --surface2: #f0efe9;
+    --border: rgba(0,0,0,0.08);
+    --border-strong: rgba(0,0,0,0.15);
+    --text: #1a1917;
+    --text-muted: #6b6963;
+    --text-hint: #a09d97;
+    --accent: #2a2927;
+    --accent-soft: rgba(42,41,39,0.06);
+    --tag-bg: #eae9e3;
+    --tag-text: #4a4845;
+    --danger: #c0392b;
+    --radius: 10px;
+    --radius-sm: 6px;
+    --mono: 'DM Mono', monospace;
+    --sans: 'Noto Sans KR', sans-serif;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #141312;
+      --surface: #1e1d1b;
+      --surface2: #252422;
+      --border: rgba(255,255,255,0.07);
+      --border-strong: rgba(255,255,255,0.14);
+      --text: #e8e6e1;
+      --text-muted: #8a8780;
+      --text-hint: #5a5855;
+      --accent: #e8e6e1;
+      --accent-soft: rgba(232,230,225,0.06);
+      --tag-bg: #2a2927;
+      --tag-text: #a09d97;
+      --danger: #e74c3c;
+    }
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  /* ── Layout ── */
+  .shell { display: flex; height: 100vh; overflow: hidden; }
+
+  /* ── Sidebar ── */
+  .sidebar {
+    width: 220px;
+    min-width: 220px;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    transition: width 0.25s ease, min-width 0.25s ease;
+    overflow: hidden;
+  }
+  .sidebar.collapsed { width: 0; min-width: 0; border-right: none; }
+
+  .sidebar-header {
+    padding: 20px 16px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .logo {
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 400;
+    color: var(--text-muted);
+    letter-spacing: 0.05em;
+  }
+
+  .sidebar-section { padding: 0 8px 8px; }
+  .sidebar-label {
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    color: var(--text-hint);
+    text-transform: uppercase;
+    padding: 8px 8px 4px;
+  }
+
+  .folder-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 8px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-size: 13px;
+    color: var(--text-muted);
+    transition: background 0.15s;
+    user-select: none;
+  }
+  .folder-item:hover { background: var(--accent-soft); color: var(--text); }
+  .folder-item.active { background: var(--accent-soft); color: var(--text); font-weight: 500; }
+  .folder-icon { font-size: 12px; opacity: 0.6; }
+  .folder-count {
+    margin-left: auto;
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-hint);
+  }
+
+  .btn-add-folder {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 8px;
+    border-radius: var(--radius-sm);
+    border: 1px dashed var(--border-strong);
+    background: none;
+    color: var(--text-hint);
+    font-size: 12px;
+    font-family: var(--sans);
+    cursor: pointer;
+    width: 100%;
+    margin: 4px 0;
+    transition: color 0.15s, border-color 0.15s;
+  }
+  .btn-add-folder:hover { color: var(--text-muted); border-color: var(--text-hint); }
+
+  /* ── Main ── */
+  .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+  .topbar {
+    height: 52px;
+    padding: 0 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    flex-shrink: 0;
+  }
+  .btn-toggle-sidebar {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-muted);
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    border-radius: 4px;
+    transition: color 0.15s;
+  }
+  .btn-toggle-sidebar:hover { color: var(--text); }
+
+  .topbar-title {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text);
+    flex: 1;
+  }
+  .topbar-right { display: flex; align-items: center; gap: 8px; }
+
+  .search-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 5px 10px;
+    min-width: 200px;
+  }
+  .search-bar input {
+    border: none;
+    background: none;
+    outline: none;
+    font-size: 13px;
+    color: var(--text);
+    font-family: var(--sans);
+    width: 100%;
+  }
+  .search-bar input::placeholder { color: var(--text-hint); }
+
+  .btn-icon {
+    background: none;
+    border: 1px solid var(--border);
+    cursor: pointer;
+    color: var(--text-muted);
+    padding: 6px 10px;
+    border-radius: var(--radius-sm);
+    font-size: 12px;
+    font-family: var(--sans);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .btn-icon:hover { color: var(--text); border-color: var(--border-strong); background: var(--accent-soft); }
+  .btn-primary {
+    background: var(--text);
+    color: var(--bg);
+    border: none;
+    cursor: pointer;
+    padding: 6px 14px;
+    border-radius: var(--radius-sm);
+    font-size: 12px;
+    font-family: var(--sans);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    transition: opacity 0.15s;
+  }
+  .btn-primary:hover { opacity: 0.8; }
+
+  /* ── Grid ── */
+  .content { flex: 1; overflow-y: auto; padding: 20px; }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 14px;
+  }
+
+  /* ── Card ── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    cursor: pointer;
+    overflow: hidden;
+    transition: border-color 0.15s, transform 0.15s;
+    animation: fadeIn 0.2s ease;
+  }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+  .card:hover { border-color: var(--border-strong); transform: translateY(-1px); }
+
+  .card-thumb {
+    aspect-ratio: 4/3;
+    background: var(--surface2);
+    overflow: hidden;
+    position: relative;
+  }
+  .card-thumb img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .card-thumb-placeholder {
+    width: 100%; height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    opacity: 0.3;
+  }
+  .card-img-count {
+    position: absolute;
+    bottom: 6px; right: 6px;
+    background: rgba(0,0,0,0.55);
+    color: #fff;
+    font-family: var(--mono);
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 3px;
+  }
+
+  .card-body { padding: 10px 12px 12px; }
+  .card-title {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text);
+    margin-bottom: 6px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .card-tags { display: flex; flex-wrap: wrap; gap: 4px; }
+  .tag {
+    background: var(--tag-bg);
+    color: var(--tag-text);
+    font-size: 10px;
+    padding: 2px 7px;
+    border-radius: 100px;
+    font-family: var(--mono);
+  }
+
+  /* ── Empty state ── */
+  .empty-state {
+    grid-column: 1/-1;
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text-hint);
+  }
+  .empty-state p { font-size: 13px; margin-top: 8px; }
+
+  /* ── Modal base ── */
+  .overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.35);
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+  }
+  .overlay.open { opacity: 1; pointer-events: all; }
+
+  .modal {
+    background: var(--surface);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    width: 100%;
+    max-width: 520px;
+    max-height: 90vh;
+    overflow-y: auto;
+    transform: translateY(10px);
+    transition: transform 0.2s;
+  }
+  .overlay.open .modal { transform: none; }
+
+  .modal-header {
+    padding: 18px 20px 14px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .modal-title { font-size: 15px; font-weight: 500; }
+  .btn-close {
+    background: none; border: none;
+    color: var(--text-hint);
+    cursor: pointer;
+    font-size: 18px;
+    line-height: 1;
+    padding: 2px 4px;
+    border-radius: 4px;
+    transition: color 0.15s;
+  }
+  .btn-close:hover { color: var(--text); }
+
+  .modal-body { padding: 18px 20px; }
+  .field { margin-bottom: 14px; }
+  .field label {
+    display: block;
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: 5px;
+    font-weight: 500;
+  }
+  .field input, .field textarea, .field select {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 8px 10px;
+    font-size: 13px;
+    color: var(--text);
+    font-family: var(--sans);
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .field input:focus, .field textarea:focus, .field select:focus {
+    border-color: var(--border-strong);
+  }
+  .field textarea { resize: vertical; min-height: 70px; }
+
+  .modal-footer {
+    padding: 12px 20px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+  }
+
+  /* ── Add item modal extras ── */
+  .ai-suggestion {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 10px 12px;
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 6px;
+  }
+  .ai-suggestion.loading::after {
+    content: '';
+    display: inline-block;
+    width: 8px; height: 8px;
+    border: 1.5px solid var(--text-hint);
+    border-top-color: var(--text);
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+    margin-left: 6px;
+    vertical-align: middle;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .tag-input-wrap { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+  .tag-editable {
+    background: var(--tag-bg);
+    color: var(--tag-text);
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 100px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .tag-editable button {
+    background: none; border: none;
+    color: var(--tag-text);
+    cursor: pointer;
+    font-size: 13px;
+    line-height: 1;
+    padding: 0;
+    opacity: 0.5;
+  }
+  .tag-editable button:hover { opacity: 1; }
+
+  .image-preview-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    gap: 6px;
+    margin-top: 8px;
+  }
+  .image-preview-grid img {
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: cover;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+  }
+
+  /* ── Detail view ── */
+  .detail-overlay {
+    position: fixed; inset: 0;
+    background: var(--bg);
+    z-index: 200;
+    overflow-y: auto;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+  }
+  .detail-overlay.open { opacity: 1; pointer-events: all; }
+
+  .detail-topbar {
+    position: sticky; top: 0;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 20px;
+    height: 52px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    z-index: 10;
+  }
+  .detail-body { max-width: 820px; margin: 0 auto; padding: 28px 20px; }
+
+  .detail-title {
+    font-size: 22px;
+    font-weight: 500;
+    line-height: 1.35;
+    margin-bottom: 12px;
+  }
+  .detail-meta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+  }
+  .detail-folder {
+    font-size: 12px;
+    color: var(--text-hint);
+    background: var(--tag-bg);
+    padding: 3px 9px;
+    border-radius: 100px;
+    font-family: var(--mono);
+  }
+  .detail-date { font-size: 12px; color: var(--text-hint); font-family: var(--mono); }
+  .detail-link a {
+    font-size: 12px;
+    color: var(--text-muted);
+    text-decoration: none;
+    word-break: break-all;
+  }
+  .detail-link a:hover { text-decoration: underline; }
+
+  .detail-images-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+  .section-label {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-hint);
+  }
+
+  .detail-images {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 8px;
+    margin-bottom: 24px;
+  }
+  .detail-images img {
+    width: 100%;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    cursor: zoom-in;
+    transition: opacity 0.15s;
+    display: block;
+  }
+  .detail-images img:hover { opacity: 0.85; }
+
+  .detail-memo {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-bottom: 24px;
+  }
+  .detail-memo textarea {
+    width: 100%;
+    background: none;
+    border: none;
+    outline: none;
+    font-size: 14px;
+    color: var(--text);
+    font-family: var(--sans);
+    resize: none;
+    min-height: 120px;
+    line-height: 1.7;
+  }
+  .detail-memo textarea::placeholder { color: var(--text-hint); }
+  .memo-saved {
+    font-size: 11px;
+    color: var(--text-hint);
+    font-family: var(--mono);
+    text-align: right;
+    margin-top: 4px;
+    height: 14px;
+    transition: opacity 0.5s;
+  }
+
+  /* ── Settings modal ── */
+  .settings-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .settings-row:last-child { border-bottom: none; }
+  .settings-label { font-size: 13px; }
+  .settings-desc { font-size: 12px; color: var(--text-hint); margin-top: 2px; }
+  .settings-row input {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 5px 8px;
+    font-size: 12px;
+    font-family: var(--mono);
+    color: var(--text);
+    outline: none;
+    width: 240px;
+  }
+
+  /* ── Lightbox ── */
+  .lightbox {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.92);
+    z-index: 500;
+    display: none;
+    align-items: center;
+    justify-content: center;
+  }
+  .lightbox.open { display: flex; }
+  .lightbox img {
+    max-width: 90vw;
+    max-height: 90vh;
+    border-radius: 4px;
+    object-fit: contain;
+  }
+  .lightbox-close {
+    position: absolute;
+    top: 20px; right: 20px;
+    background: rgba(255,255,255,0.1);
+    border: none;
+    color: #fff;
+    font-size: 22px;
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* ── Toast ── */
+  .toast {
+    position: fixed;
+    bottom: 24px; left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--text);
+    color: var(--bg);
+    font-size: 13px;
+    padding: 8px 16px;
+    border-radius: var(--radius-sm);
+    z-index: 1000;
+    opacity: 0;
+    transition: all 0.25s;
+    pointer-events: none;
+    font-family: var(--mono);
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  .divider { height: 1px; background: var(--border); margin: 6px 8px; }
+
+  /* ── Scrollbar ── */
+  ::-webkit-scrollbar { width: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 10px; }
+</style>
+</head>
+<body>
+
+<div class="shell">
+  <!-- Sidebar -->
+  <nav class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <span class="logo">archive</span>
+    </div>
+    <div class="sidebar-section">
+      <div class="folder-item active" data-folder="all" onclick="selectFolder('all')">
+        <span class="folder-icon">◈</span>
+        <span>전체</span>
+        <span class="folder-count" id="count-all">0</span>
+      </div>
+      <div class="folder-item" data-folder="unsorted" onclick="selectFolder('unsorted')">
+        <span class="folder-icon">○</span>
+        <span>미분류</span>
+        <span class="folder-count" id="count-unsorted">0</span>
+      </div>
+    </div>
+    <div class="divider"></div>
+    <div class="sidebar-section" style="flex:1; overflow-y:auto;">
+      <div class="sidebar-label">폴더</div>
+      <div id="folder-list"></div>
+      <button class="btn-add-folder" onclick="openFolderModal()">
+        + 새 폴더
+      </button>
+    </div>
+    <div class="divider"></div>
+    <div class="sidebar-section">
+      <div class="folder-item" onclick="openSettings()">
+        <span class="folder-icon">⚙</span>
+        <span>설정</span>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main -->
+  <div class="main">
+    <div class="topbar">
+      <button class="btn-toggle-sidebar" onclick="toggleSidebar()" title="사이드바 토글">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+          <path d="M3 6h18M3 12h18M3 18h18"/>
+        </svg>
+      </button>
+      <span class="topbar-title" id="topbar-title">전체</span>
+      <div class="topbar-right">
+        <div class="search-bar">
+          <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+          </svg>
+          <input type="text" id="search-input" placeholder="검색" oninput="renderGrid()">
+        </div>
+        <button class="btn-primary" onclick="openAddModal()">
+          + 추가
+        </button>
+      </div>
+    </div>
+    <div class="content">
+      <div class="grid" id="grid"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Add/Edit Item Modal -->
+<div class="overlay" id="add-overlay" onclick="closeAddModal(event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <span class="modal-title" id="add-modal-title">새 아이디어 추가</span>
+      <button class="btn-close" onclick="closeAddModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="field">
+        <label>링크 (인스타그램 / 스레드 / 기타)</label>
+        <input type="url" id="input-url" placeholder="https://..." oninput="onUrlInput()">
+        <div class="ai-suggestion" id="url-fetch-status" style="display:none;"></div>
+      </div>
+      <div class="field">
+        <label>제목</label>
+        <input type="text" id="input-title" placeholder="제목을 입력하거나 링크에서 자동 추출됩니다">
+      </div>
+      <div class="field">
+        <label>이미지 URL (여러 개 줄바꿈으로 구분)</label>
+        <textarea id="input-images" rows="3" placeholder="https://example.com/image.jpg&#10;https://..."></textarea>
+        <div class="image-preview-grid" id="img-preview-grid"></div>
+      </div>
+      <div class="field">
+        <label>폴더</label>
+        <select id="input-folder">
+          <option value="">미분류</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>태그</label>
+        <div class="tag-input-wrap" id="tag-input-wrap">
+          <input type="text" id="tag-input-field" placeholder="태그 입력 후 Enter"
+            style="border:none;background:none;outline:none;font-size:12px;font-family:var(--sans);color:var(--text);min-width:80px;padding:2px 0;"
+            onkeydown="handleTagInput(event)">
+        </div>
+        <div id="ai-tag-hint" class="ai-suggestion" style="display:none;"></div>
+      </div>
+      <div class="field">
+        <label>메모</label>
+        <textarea id="input-memo" rows="3" placeholder="간단한 메모..."></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-icon" onclick="runAiSuggest()" id="btn-ai-suggest">✦ AI 추천</button>
+      <button class="btn-icon" onclick="closeAddModal()">취소</button>
+      <button class="btn-primary" onclick="saveItem()">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- New Folder Modal -->
+<div class="overlay" id="folder-overlay" onclick="closeFolderModal(event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <span class="modal-title">새 폴더</span>
+      <button class="btn-close" onclick="closeFolderModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="field">
+        <label>폴더 이름</label>
+        <input type="text" id="folder-name-input" placeholder="폴더 이름" onkeydown="if(event.key==='Enter')saveFolder()">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-icon" onclick="closeFolderModal()">취소</button>
+      <button class="btn-primary" onclick="saveFolder()">만들기</button>
+    </div>
+  </div>
+</div>
+
+<!-- Settings Modal -->
+<div class="overlay" id="settings-overlay" onclick="closeSettings(event)">
+  <div class="modal" onclick="event.stopPropagation()" style="max-width:480px;">
+    <div class="modal-header">
+      <span class="modal-title">설정</span>
+      <button class="btn-close" onclick="closeSettings()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="settings-row">
+        <div>
+          <div class="settings-label">GitHub Gist Token</div>
+          <div class="settings-desc">데이터 동기화에 사용됩니다 (gist 권한 필요)</div>
+        </div>
+        <input type="password" id="settings-gist-token" placeholder="ghp_...">
+      </div>
+      <div class="settings-row">
+        <div>
+          <div class="settings-label">Gist ID</div>
+          <div class="settings-desc">비워두면 최초 저장 시 자동 생성됩니다</div>
+        </div>
+        <input type="text" id="settings-gist-id" placeholder="자동 생성">
+      </div>
+      <div class="settings-row">
+        <div>
+          <div class="settings-label">Anthropic API Key</div>
+          <div class="settings-desc">AI 태그/폴더 추천에 사용됩니다</div>
+        </div>
+        <input type="password" id="settings-anthropic-key" placeholder="sk-ant-...">
+      </div>
+      <div class="settings-row" style="border:none; padding-top:16px; flex-direction:column; align-items:flex-start; gap:8px;">
+        <button class="btn-primary" onclick="saveSettings()" style="width:100%; justify-content:center;">저장</button>
+        <button class="btn-icon" onclick="syncFromGist()" style="width:100%; justify-content:center;">↓ Gist에서 불러오기</button>
+        <button class="btn-icon" onclick="syncToGist()" style="width:100%; justify-content:center;">↑ Gist에 저장</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Detail Overlay -->
+<div class="detail-overlay" id="detail-overlay">
+  <div class="detail-topbar">
+    <button class="btn-icon" onclick="closeDetail()">← 뒤로</button>
+    <span style="flex:1"></span>
+    <button class="btn-icon" id="detail-btn-download" onclick="downloadAllImages()">↓ 이미지 다운로드</button>
+    <button class="btn-icon" onclick="editCurrentItem()">편집</button>
+    <button class="btn-icon" style="color:var(--danger);" onclick="deleteCurrentItem()">삭제</button>
+  </div>
+  <div class="detail-body">
+    <div class="detail-title" id="detail-title"></div>
+    <div class="detail-meta">
+      <span class="detail-folder" id="detail-folder"></span>
+      <span class="detail-date" id="detail-date"></span>
+    </div>
+    <div class="detail-link" id="detail-link"></div>
+    <div class="card-tags" id="detail-tags" style="margin: 12px 0 20px;"></div>
+
+    <div id="detail-images-section">
+      <div class="detail-images-header">
+        <span class="section-label">이미지</span>
+      </div>
+      <div class="detail-images" id="detail-images"></div>
+    </div>
+
+    <div class="detail-images-header" style="margin-top:24px;">
+      <span class="section-label">메모</span>
+    </div>
+    <div class="detail-memo">
+      <textarea id="detail-memo-textarea" placeholder="메모를 입력하세요..." oninput="saveMemoDebounced()"></textarea>
+      <div class="memo-saved" id="memo-saved-indicator"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Lightbox -->
+<div class="lightbox" id="lightbox" onclick="closeLightbox()">
+  <button class="lightbox-close" onclick="closeLightbox()">×</button>
+  <img id="lightbox-img" src="" alt="">
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ─── State ───────────────────────────────────────────────────────────────────
+let state = {
+  items: [],
+  folders: [],
+  currentFolder: 'all',
+  currentItemId: null,
+  editingItemId: null,
+  pendingTags: [],
+  settings: { gistToken: '', gistId: '', anthropicKey: '' }
+};
+
+let memoSaveTimer = null;
+let urlDebounceTimer = null;
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+function init() {
+  loadFromLocal();
+  loadSettings();
+  renderFolderList();
+  renderGrid();
+  document.getElementById('settings-gist-token').value = state.settings.gistToken;
+  document.getElementById('settings-gist-id').value = state.settings.gistId;
+  document.getElementById('settings-anthropic-key').value = state.settings.anthropicKey;
+}
+
+// ─── Storage ──────────────────────────────────────────────────────────────────
+function loadFromLocal() {
+  try {
+    const raw = localStorage.getItem('archive_data');
+    if (raw) {
+      const d = JSON.parse(raw);
+      state.items = d.items || [];
+      state.folders = d.folders || [];
+    }
+  } catch(e) {}
+}
+
+function saveToLocal() {
+  localStorage.setItem('archive_data', JSON.stringify({
+    items: state.items,
+    folders: state.folders
+  }));
+}
+
+function loadSettings() {
+  try {
+    const raw = localStorage.getItem('archive_settings');
+    if (raw) state.settings = { ...state.settings, ...JSON.parse(raw) };
+  } catch(e) {}
+}
+
+function saveSettings() {
+  state.settings.gistToken = document.getElementById('settings-gist-token').value.trim();
+  state.settings.gistId = document.getElementById('settings-gist-id').value.trim();
+  state.settings.anthropicKey = document.getElementById('settings-anthropic-key').value.trim();
+  localStorage.setItem('archive_settings', JSON.stringify(state.settings));
+  document.getElementById('settings-gist-id').value = state.settings.gistId;
+  closeSettings();
+  showToast('설정이 저장되었습니다');
+}
+
+function openSettings() {
+  document.getElementById('settings-overlay').classList.add('open');
+}
+function closeSettings(e) {
+  if (e && e.target !== document.getElementById('settings-overlay')) return;
+  document.getElementById('settings-overlay').classList.remove('open');
+}
+
+// ─── Gist Sync ────────────────────────────────────────────────────────────────
+async function syncToGist() {
+  const { gistToken, gistId } = state.settings;
+  if (!gistToken) { showToast('GitHub Token을 먼저 설정하세요'); return; }
+  showToast('Gist에 저장 중...');
+  const content = JSON.stringify({ items: state.items, folders: state.folders }, null, 2);
+  const payload = { description: 'archive-data', public: false, files: { 'archive.json': { content } } };
+  try {
+    let res;
+    if (gistId) {
+      res = await fetch(`https://api.github.com/gists/${gistId}`, {
+        method: 'PATCH',
+        headers: { Authorization: `token ${gistToken}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+    } else {
+      res = await fetch('https://api.github.com/gists', {
+        method: 'POST',
+        headers: { Authorization: `token ${gistToken}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      state.settings.gistId = data.id;
+      localStorage.setItem('archive_settings', JSON.stringify(state.settings));
+      document.getElementById('settings-gist-id').value = data.id;
+    }
+    if (res.ok) showToast('Gist 저장 완료!');
+    else showToast('저장 실패. 토큰을 확인하세요.');
+  } catch(e) { showToast('오류: ' + e.message); }
+}
+
+async function syncFromGist() {
+  const { gistToken, gistId } = state.settings;
+  if (!gistToken || !gistId) { showToast('Token과 Gist ID를 설정하세요'); return; }
+  showToast('Gist에서 불러오는 중...');
+  try {
+    const res = await fetch(`https://api.github.com/gists/${gistId}`, {
+      headers: { Authorization: `token ${gistToken}` }
+    });
+    const data = await res.json();
+    const raw = data.files['archive.json']?.content;
+    if (!raw) { showToast('데이터를 찾을 수 없습니다'); return; }
+    const parsed = JSON.parse(raw);
+    state.items = parsed.items || [];
+    state.folders = parsed.folders || [];
+    saveToLocal();
+    renderFolderList();
+    renderGrid();
+    showToast('불러오기 완료!');
+  } catch(e) { showToast('오류: ' + e.message); }
+}
+
+// ─── Folders ──────────────────────────────────────────────────────────────────
+function renderFolderList() {
+  const list = document.getElementById('folder-list');
+  list.innerHTML = state.folders.map(f => `
+    <div class="folder-item ${state.currentFolder === f.id ? 'active' : ''}"
+         data-folder="${f.id}" onclick="selectFolder('${f.id}')">
+      <span class="folder-icon">▷</span>
+      <span>${f.name}</span>
+      <span class="folder-count">${state.items.filter(i=>i.folder===f.id).length}</span>
+    </div>
+  `).join('');
+
+  // update counts
+  document.getElementById('count-all').textContent = state.items.length;
+  document.getElementById('count-unsorted').textContent = state.items.filter(i=>!i.folder).length;
+}
+
+function selectFolder(id) {
+  state.currentFolder = id;
+  document.querySelectorAll('.folder-item').forEach(el => {
+    el.classList.toggle('active', el.dataset.folder === id);
+  });
+  const name = id === 'all' ? '전체' : id === 'unsorted' ? '미분류' :
+    state.folders.find(f=>f.id===id)?.name || id;
+  document.getElementById('topbar-title').textContent = name;
+  renderGrid();
+}
+
+function openFolderModal() {
+  document.getElementById('folder-name-input').value = '';
+  document.getElementById('folder-overlay').classList.add('open');
+  setTimeout(() => document.getElementById('folder-name-input').focus(), 100);
+}
+function closeFolderModal(e) {
+  if (e && e.target !== document.getElementById('folder-overlay')) return;
+  document.getElementById('folder-overlay').classList.remove('open');
+}
+function saveFolder() {
+  const name = document.getElementById('folder-name-input').value.trim();
+  if (!name) return;
+  const folder = { id: 'f_' + Date.now(), name };
+  state.folders.push(folder);
+  saveToLocal();
+  renderFolderList();
+  closeFolderModal();
+  showToast(`폴더 "${name}" 생성됨`);
+}
+
+// ─── Grid ─────────────────────────────────────────────────────────────────────
+function renderGrid() {
+  const q = document.getElementById('search-input').value.toLowerCase();
+  let items = state.items;
+
+  if (state.currentFolder === 'unsorted') items = items.filter(i => !i.folder);
+  else if (state.currentFolder !== 'all') items = items.filter(i => i.folder === state.currentFolder);
+
+  if (q) items = items.filter(i =>
+    i.title?.toLowerCase().includes(q) ||
+    i.tags?.some(t => t.toLowerCase().includes(q)) ||
+    i.memo?.toLowerCase().includes(q)
+  );
+
+  items = [...items].reverse(); // newest first
+
+  const grid = document.getElementById('grid');
+  if (items.length === 0) {
+    grid.innerHTML = `<div class="empty-state">
+      <div style="font-size:28px;opacity:0.2">◈</div>
+      <p>아직 아이디어가 없습니다</p>
+      <p style="margin-top:4px; font-size:12px;">+ 추가 버튼으로 첫 번째 아이디어를 기록해보세요</p>
+    </div>`;
+    return;
+  }
+
+  grid.innerHTML = items.map(item => {
+    const imgs = item.images || [];
+    const thumb = imgs[0] ? `<img src="${imgs[0]}" alt="" onerror="this.parentElement.innerHTML='<div class=card-thumb-placeholder>◈</div>'">` : '<div class="card-thumb-placeholder">◈</div>';
+    const countBadge = imgs.length > 1 ? `<span class="card-img-count">${imgs.length}</span>` : '';
+    const tags = (item.tags||[]).slice(0,3).map(t=>`<span class="tag">${t}</span>`).join('');
+    return `<div class="card" onclick="openDetail('${item.id}')">
+      <div class="card-thumb">${thumb}${countBadge}</div>
+      <div class="card-body">
+        <div class="card-title">${item.title || '(제목 없음)'}</div>
+        <div class="card-tags">${tags}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ─── Add / Edit Item ──────────────────────────────────────────────────────────
+function openAddModal(editItem = null) {
+  state.editingItemId = editItem ? editItem.id : null;
+  state.pendingTags = editItem ? [...(editItem.tags || [])] : [];
+
+  document.getElementById('add-modal-title').textContent = editItem ? '아이디어 편집' : '새 아이디어 추가';
+  document.getElementById('input-url').value = editItem?.url || '';
+  document.getElementById('input-title').value = editItem?.title || '';
+  document.getElementById('input-images').value = (editItem?.images || []).join('\n');
+  document.getElementById('input-memo').value = editItem?.memo || '';
+  document.getElementById('url-fetch-status').style.display = 'none';
+  document.getElementById('ai-tag-hint').style.display = 'none';
+
+  // folder select
+  const sel = document.getElementById('input-folder');
+  sel.innerHTML = '<option value="">미분류</option>' +
+    state.folders.map(f => `<option value="${f.id}" ${editItem?.folder===f.id?'selected':''}>${f.name}</option>`).join('');
+
+  renderPendingTags();
+  renderImagePreviews();
+  document.getElementById('add-overlay').classList.add('open');
+}
+
+function closeAddModal(e) {
+  if (e && e.target !== document.getElementById('add-overlay')) return;
+  document.getElementById('add-overlay').classList.remove('open');
+}
+
+function handleTagInput(e) {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    const val = e.target.value.trim();
+    if (val && !state.pendingTags.includes(val)) {
+      state.pendingTags.push(val);
+      renderPendingTags();
+    }
+    e.target.value = '';
+  }
+}
+
+function renderPendingTags() {
+  const wrap = document.getElementById('tag-input-wrap');
+  const inp = document.getElementById('tag-input-field');
+  wrap.innerHTML = '';
+  state.pendingTags.forEach((t, i) => {
+    const span = document.createElement('span');
+    span.className = 'tag-editable';
+    span.innerHTML = `${t}<button onclick="removeTag(${i})" title="삭제">×</button>`;
+    wrap.appendChild(span);
+  });
+  wrap.appendChild(inp);
+  inp.focus();
+}
+
+function removeTag(i) {
+  state.pendingTags.splice(i, 1);
+  renderPendingTags();
+}
+
+function onUrlInput() {
+  clearTimeout(urlDebounceTimer);
+  const url = document.getElementById('input-url').value.trim();
+  if (!url) return;
+  // Auto-generate title from URL
+  urlDebounceTimer = setTimeout(() => {
+    if (!document.getElementById('input-title').value) {
+      try {
+        const u = new URL(url);
+        const parts = u.pathname.split('/').filter(Boolean);
+        const guess = parts[parts.length - 1]?.replace(/[-_]/g, ' ') || u.hostname;
+        document.getElementById('input-title').value = guess;
+      } catch(e) {}
+    }
+    renderImagePreviews();
+  }, 600);
+}
+
+document.getElementById('input-images').addEventListener('input', renderImagePreviews);
+
+function renderImagePreviews() {
+  const urls = document.getElementById('input-images').value.split('\n').map(s=>s.trim()).filter(Boolean);
+  const grid = document.getElementById('img-preview-grid');
+  grid.innerHTML = urls.map(u => `<img src="${u}" alt="" onerror="this.style.display='none'">`).join('');
+}
+
+async function runAiSuggest() {
+  const key = state.settings.anthropicKey;
+  if (!key) { showToast('설정에서 Anthropic API 키를 입력하세요'); return; }
+  const title = document.getElementById('input-title').value;
+  const url = document.getElementById('input-url').value;
+  if (!title && !url) { showToast('제목 또는 링크를 먼저 입력하세요'); return; }
+
+  const hint = document.getElementById('ai-tag-hint');
+  hint.style.display = 'block';
+  hint.className = 'ai-suggestion loading';
+  hint.textContent = 'AI 분석 중';
+  document.getElementById('btn-ai-suggest').disabled = true;
+
+  const folders = state.folders.map(f => f.name).join(', ') || '없음';
+  const prompt = `다음 아이디어의 정보를 보고, 태그 3~5개와 적합한 폴더를 추천해줘.
+제목: ${title}
+링크: ${url}
+기존 폴더 목록: ${folders}
+
+JSON 형식으로만 답해줘:
+{"tags": ["태그1","태그2","태그3"], "folder": "폴더명 또는 빈 문자열"}`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'x-api-key': key,
+        'anthropic-version': '2023-06-01',
+        'content-type': 'application/json',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 300,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+    const data = await res.json();
+    const text = data.content?.[0]?.text || '';
+    const match = text.match(/\{[\s\S]*\}/);
+    if (match) {
+      const parsed = JSON.parse(match[0]);
+      // Apply tags
+      if (parsed.tags) {
+        parsed.tags.forEach(t => { if (!state.pendingTags.includes(t)) state.pendingTags.push(t); });
+        renderPendingTags();
+      }
+      // Apply folder suggestion
+      if (parsed.folder) {
+        const match = state.folders.find(f => f.name === parsed.folder);
+        if (match) document.getElementById('input-folder').value = match.id;
+        hint.textContent = `✦ 폴더 "${parsed.folder}" 추천됨`;
+      } else {
+        hint.textContent = '✦ 태그 추천 완료';
+      }
+      hint.className = 'ai-suggestion';
+    }
+  } catch(e) {
+    hint.className = 'ai-suggestion';
+    hint.textContent = '오류: ' + e.message;
+  }
+  document.getElementById('btn-ai-suggest').disabled = false;
+}
+
+function saveItem() {
+  const title = document.getElementById('input-title').value.trim();
+  if (!title) { showToast('제목을 입력하세요'); return; }
+  const images = document.getElementById('input-images').value.split('\n').map(s=>s.trim()).filter(Boolean);
+  const item = {
+    id: state.editingItemId || ('i_' + Date.now()),
+    title,
+    url: document.getElementById('input-url').value.trim(),
+    images,
+    folder: document.getElementById('input-folder').value,
+    tags: [...state.pendingTags],
+    memo: document.getElementById('input-memo').value,
+    createdAt: state.editingItemId ?
+      state.items.find(i=>i.id===state.editingItemId)?.createdAt || Date.now() :
+      Date.now()
+  };
+
+  if (state.editingItemId) {
+    const idx = state.items.findIndex(i=>i.id===state.editingItemId);
+    if (idx >= 0) state.items[idx] = item;
+  } else {
+    state.items.push(item);
+  }
+
+  saveToLocal();
+  renderFolderList();
+  renderGrid();
+  closeAddModal();
+  showToast(state.editingItemId ? '수정되었습니다' : '추가되었습니다');
+  state.editingItemId = null;
+}
+
+// ─── Detail View ──────────────────────────────────────────────────────────────
+function openDetail(id) {
+  const item = state.items.find(i=>i.id===id);
+  if (!item) return;
+  state.currentItemId = id;
+
+  document.getElementById('detail-title').textContent = item.title || '(제목 없음)';
+  const folderName = item.folder ? state.folders.find(f=>f.id===item.folder)?.name || '' : '';
+  document.getElementById('detail-folder').textContent = folderName || '미분류';
+  document.getElementById('detail-date').textContent = item.createdAt ?
+    new Date(item.createdAt).toLocaleDateString('ko-KR') : '';
+  document.getElementById('detail-link').innerHTML = item.url ?
+    `<a href="${item.url}" target="_blank" rel="noopener">${item.url}</a>` : '';
+  document.getElementById('detail-tags').innerHTML =
+    (item.tags||[]).map(t=>`<span class="tag">${t}</span>`).join('');
+
+  const imgs = item.images || [];
+  document.getElementById('detail-images').innerHTML = imgs.map(src =>
+    `<img src="${src}" alt="" onclick="openLightbox('${src}')" onerror="this.style.display='none'">`
+  ).join('');
+  document.getElementById('detail-images-section').style.display = imgs.length ? 'block' : 'none';
+  document.getElementById('detail-btn-download').style.display = imgs.length ? 'flex' : 'none';
+
+  document.getElementById('detail-memo-textarea').value = item.memo || '';
+  document.getElementById('memo-saved-indicator').textContent = '';
+
+  document.getElementById('detail-overlay').classList.add('open');
+}
+
+function closeDetail() {
+  document.getElementById('detail-overlay').classList.remove('open');
+  state.currentItemId = null;
+}
+
+function editCurrentItem() {
+  const item = state.items.find(i=>i.id===state.currentItemId);
+  if (!item) return;
+  closeDetail();
+  openAddModal(item);
+}
+
+function deleteCurrentItem() {
+  if (!state.currentItemId) return;
+  if (!confirm('정말 삭제하시겠습니까?')) return;
+  state.items = state.items.filter(i=>i.id!==state.currentItemId);
+  saveToLocal();
+  renderFolderList();
+  renderGrid();
+  closeDetail();
+  showToast('삭제되었습니다');
+}
+
+// Memo auto-save
+function saveMemoDebounced() {
+  clearTimeout(memoSaveTimer);
+  const ind = document.getElementById('memo-saved-indicator');
+  ind.textContent = '';
+  memoSaveTimer = setTimeout(() => {
+    const item = state.items.find(i=>i.id===state.currentItemId);
+    if (item) {
+      item.memo = document.getElementById('detail-memo-textarea').value;
+      saveToLocal();
+      ind.textContent = '저장됨';
+      ind.style.opacity = '1';
+      setTimeout(() => { ind.style.opacity = '0'; }, 2000);
+    }
+  }, 800);
+}
+
+// ─── Image Download ───────────────────────────────────────────────────────────
+async function downloadAllImages() {
+  const item = state.items.find(i=>i.id===state.currentItemId);
+  if (!item || !item.images?.length) return;
+  showToast('이미지 다운로드 중...');
+  for (let i = 0; i < item.images.length; i++) {
+    try {
+      const res = await fetch(item.images[i]);
+      const blob = await res.blob();
+      const ext = blob.type.split('/')[1] || 'jpg';
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `${item.title || 'image'}_${i+1}.${ext}`;
+      a.click();
+      URL.revokeObjectURL(a.href);
+      await new Promise(r => setTimeout(r, 400));
+    } catch(e) {}
+  }
+  showToast('다운로드 완료!');
+}
+
+// ─── Lightbox ─────────────────────────────────────────────────────────────────
+function openLightbox(src) {
+  document.getElementById('lightbox-img').src = src;
+  document.getElementById('lightbox').classList.add('open');
+}
+function closeLightbox() {
+  document.getElementById('lightbox').classList.remove('open');
+}
+
+// ─── Sidebar ──────────────────────────────────────────────────────────────────
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('collapsed');
+}
+
+// ─── Toast ────────────────────────────────────────────────────────────────────
+let toastTimer;
+function showToast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2500);
+}
+
+// ─── Keyboard shortcuts ───────────────────────────────────────────────────────
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    if (document.getElementById('lightbox').classList.contains('open')) { closeLightbox(); return; }
+    if (document.getElementById('detail-overlay').classList.contains('open')) { closeDetail(); return; }
+    if (document.getElementById('add-overlay').classList.contains('open')) { closeAddModal(); return; }
+    if (document.getElementById('folder-overlay').classList.contains('open')) { closeFolderModal(); return; }
+    if (document.getElementById('settings-overlay').classList.contains('open')) { closeSettings(); return; }
+  }
+  if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+    e.preventDefault();
+    document.getElementById('search-input').focus();
+  }
+});
+
+// ─── Run ──────────────────────────────────────────────────────────────────────
+init();
+</script>
+</body>
+</html>
