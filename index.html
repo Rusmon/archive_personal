@@ -1987,8 +1987,10 @@ function deleteCurrentItem() {
 
 // Auto-resize textarea to fit content
 function autoResize(el) {
+  const scrollY = window.scrollY;
   el.style.height = 'auto';
   el.style.height = el.scrollHeight + 'px';
+  window.scrollTo({ top: scrollY, behavior: 'instant' });
 }
 
 // Memo auto-save
