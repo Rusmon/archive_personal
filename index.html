@@ -2,7 +2,15 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="아카이브">
+<meta name="theme-color" content="#1a1917" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#f5f4f0" media="(prefers-color-scheme: light)">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
 <title>아카이브</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
@@ -634,6 +642,210 @@
 
   .divider { height: 1px; background: var(--border); margin: 6px 8px; }
 
+  /* ── Guideline styles ── */
+  .guideline-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    margin-bottom: 6px;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .guideline-item:hover { border-color: var(--border-strong); background: var(--accent-soft); }
+  .guideline-item.selected { border-color: var(--text-muted); background: var(--accent-soft); }
+  .guideline-item-name { font-size: 13px; flex: 1; }
+  .guideline-item-preview { font-size: 11px; color: var(--text-hint); flex: 2; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+  .guideline-actions { display: flex; gap: 4px; }
+  .btn-tiny {
+    background: none; border: none;
+    font-size: 11px; color: var(--text-hint);
+    cursor: pointer; padding: 2px 5px;
+    border-radius: 3px;
+    transition: color 0.15s;
+  }
+  .btn-tiny:hover { color: var(--text); }
+  .btn-tiny.danger:hover { color: var(--danger); }
+
+  /* ── Suggestion result panel ── */
+  .suggestion-panel {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-top: 14px;
+    animation: fadeIn 0.2s ease;
+  }
+  .suggestion-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+  .suggestion-content {
+    font-size: 13px;
+    line-height: 1.75;
+    color: var(--text);
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .suggestion-content.streaming::after {
+    content: '▋';
+    animation: blink 0.8s step-end infinite;
+    color: var(--text-muted);
+  }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  .suggestion-save-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+    flex-wrap: wrap;
+  }
+
+  /* ── Guideline badge on card ── */
+  .guideline-badge {
+    font-size: 10px;
+    font-family: var(--mono);
+    color: var(--text-hint);
+    margin-top: 4px;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+  }
+
+  /* ── Mobile FAB ── */
+  .fab {
+    display: none;
+    position: fixed;
+    bottom: calc(72px + env(safe-area-inset-bottom));
+    right: 20px;
+    width: 52px; height: 52px;
+    background: var(--text);
+    color: var(--bg);
+    border: none;
+    border-radius: 50%;
+    font-size: 24px;
+    cursor: pointer;
+    z-index: 50;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.15s;
+  }
+  .fab:active { transform: scale(0.93); }
+
+  /* ── Mobile bottom tab bar ── */
+  .tab-bar {
+    display: none;
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    height: calc(56px + env(safe-area-inset-bottom));
+    padding-bottom: env(safe-area-inset-bottom);
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    z-index: 60;
+    align-items: center;
+    justify-content: space-around;
+  }
+  .tab-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    padding: 6px 0;
+    cursor: pointer;
+    color: var(--text-hint);
+    font-size: 10px;
+    font-family: var(--mono);
+    border: none;
+    background: none;
+    transition: color 0.15s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .tab-item.active { color: var(--text); }
+  .tab-item svg { width: 20px; height: 20px; }
+
+  /* ── Mobile drawer (folder nav) ── */
+  .mobile-drawer {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 150;
+  }
+  .mobile-drawer.open { display: block; }
+  .mobile-drawer-backdrop {
+    position: absolute; inset: 0;
+    background: rgba(0,0,0,0.4);
+  }
+  .mobile-drawer-panel {
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 280px;
+    background: var(--surface);
+    overflow-y: auto;
+    transform: translateX(-100%);
+    transition: transform 0.25s ease;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .mobile-drawer.open .mobile-drawer-panel {
+    transform: translateX(0);
+  }
+
+  @media (max-width: 640px) {
+    /* Hide desktop sidebar and topbar add button */
+    .sidebar { display: none !important; }
+    .fab { display: flex; }
+    .tab-bar { display: flex; }
+
+    /* Give content room for tab bar */
+    .content { padding-bottom: calc(72px + env(safe-area-inset-bottom)); }
+
+    /* Topbar adjustments */
+    .topbar { padding: 0 12px; }
+    .search-bar { min-width: 0; flex: 1; }
+    .topbar .btn-primary { display: none; } /* replaced by FAB */
+
+    /* Bigger tap targets on cards */
+    .card { border-radius: 12px; }
+    .card-body { padding: 10px 12px 14px; }
+
+    /* Grid: 2 columns on mobile */
+    .grid { grid-template-columns: repeat(2, 1fr); gap: 10px; padding: 12px; }
+
+    /* Modal full-screen on mobile */
+    .overlay { padding: 0; align-items: flex-end; }
+    .modal {
+      max-width: 100%;
+      border-radius: 20px 20px 0 0;
+      max-height: 92vh;
+    }
+
+    /* Detail overlay topbar safe area */
+    .detail-topbar {
+      padding: 0 12px;
+      padding-top: env(safe-area-inset-top);
+      height: calc(52px + env(safe-area-inset-top));
+    }
+    .detail-body { padding: 20px 16px; }
+    .detail-title { font-size: 18px; }
+    .detail-images { grid-template-columns: repeat(2, 1fr); }
+
+    /* Larger touch targets */
+    .btn-icon, .btn-primary { padding: 8px 14px; min-height: 38px; }
+    .field input, .field textarea, .field select { font-size: 16px; } /* prevents iOS zoom */
+  }
+
+  @media (max-width: 380px) {
+    .grid { grid-template-columns: repeat(2, 1fr); gap: 8px; padding: 10px; }
+  }
+
   /* ── Scrollbar ── */
   ::-webkit-scrollbar { width: 5px; }
   ::-webkit-scrollbar-track { background: transparent; }
@@ -674,7 +886,16 @@
         <span class="folder-icon">⚙</span>
         <span>설정</span>
       </div>
-    </div>
+      <div class="folder-item" onclick="openGuidelinesModal()">
+        <span class="folder-icon">◎</span>
+        <span>지침 관리</span>
+      </div>
+      <div class="divider"></div>
+      <div style="padding: 8px;">
+        <button class="btn-primary" style="width:100%; justify-content:center; padding:8px;" onclick="openGlobalSuggest()">
+          ✦ 전체 맞춤 제안
+        </button>
+      </div>
   </nav>
 
   <!-- Main -->
@@ -722,8 +943,29 @@
         <input type="text" id="input-title" placeholder="제목을 입력하거나 링크에서 자동 추출됩니다">
       </div>
       <div class="field">
-        <label>이미지 URL (여러 개 줄바꿈으로 구분)</label>
-        <textarea id="input-images" rows="3" placeholder="https://example.com/image.jpg&#10;https://..."></textarea>
+        <label>이미지</label>
+        <!-- Drop zone -->
+        <div id="img-dropzone"
+          style="border:1.5px dashed var(--border-strong);border-radius:var(--radius-sm);padding:14px;text-align:center;cursor:pointer;transition:background 0.15s;margin-bottom:8px;"
+          onclick="document.getElementById('img-file-input').click()"
+          ondragover="event.preventDefault();this.style.background='var(--accent-soft)'"
+          ondragleave="this.style.background=''"
+          ondrop="handleImageDrop(event)">
+          <input type="file" id="img-file-input" accept="image/*" multiple style="display:none" onchange="handleImageFiles(this.files)">
+          <span style="font-size:12px;color:var(--text-hint);">클릭하거나 이미지를 드래그해서 업로드</span>
+          <div id="img-upload-status" style="font-size:11px;color:var(--text-muted);margin-top:4px;font-family:var(--mono);"></div>
+        </div>
+        <!-- URL input with mirror button -->
+        <div style="display:flex;gap:6px;align-items:flex-start;">
+          <textarea id="input-images" rows="2"
+            style="flex:1;"
+            placeholder="또는 이미지 URL 입력 (줄바꿈으로 구분)&#10;https://example.com/image.jpg"></textarea>
+          <button class="btn-icon" onclick="mirrorAllUrls()" title="URL 이미지를 GitHub에 영구 저장"
+            style="white-space:nowrap;align-self:flex-start;margin-top:1px;">
+            ↑ 미러링
+          </button>
+        </div>
+        <div id="img-mirror-status" style="font-size:11px;color:var(--text-muted);margin-top:4px;font-family:var(--mono);display:none;"></div>
         <div class="image-preview-grid" id="img-preview-grid"></div>
       </div>
       <div class="field">
@@ -745,9 +987,15 @@
         <label>메모</label>
         <textarea id="input-memo" rows="3" placeholder="간단한 메모..."></textarea>
       </div>
+      <div class="field">
+        <label>연결할 지침 (맞춤 제안에 사용)</label>
+        <select id="input-guideline">
+          <option value="">지침 없음</option>
+        </select>
+      </div>
     </div>
     <div class="modal-footer">
-      <button class="btn-icon" onclick="runAiSuggest()" id="btn-ai-suggest">✦ AI 추천</button>
+      <button class="btn-icon" onclick="runAiSuggest()" id="btn-ai-suggest">✦ AI 분석</button>
       <button class="btn-icon" onclick="closeAddModal()">취소</button>
       <button class="btn-primary" onclick="saveItem()">저장</button>
     </div>
@@ -782,27 +1030,83 @@
       <button class="btn-close" onclick="closeSettings()">×</button>
     </div>
     <div class="modal-body">
+      <!-- Gist -->
       <div class="settings-row">
         <div>
           <div class="settings-label">GitHub Gist Token</div>
-          <div class="settings-desc">데이터 동기화에 사용됩니다 (gist 권한 필요)</div>
+          <div class="settings-desc">데이터 동기화 + 이미지 업로드에 공용 (repo 권한 필요)</div>
         </div>
         <input type="password" id="settings-gist-token" placeholder="ghp_...">
       </div>
       <div class="settings-row">
         <div>
           <div class="settings-label">Gist ID</div>
-          <div class="settings-desc">비워두면 최초 저장 시 자동 생성됩니다</div>
+          <div class="settings-desc">비워두면 최초 저장 시 자동 생성</div>
         </div>
         <input type="text" id="settings-gist-id" placeholder="자동 생성">
       </div>
       <div class="settings-row">
         <div>
-          <div class="settings-label">Anthropic API Key</div>
-          <div class="settings-desc">AI 태그/폴더 추천에 사용됩니다</div>
+          <div class="settings-label">이미지 저장 저장소</div>
+          <div class="settings-desc">GitHub Issues로 이미지 업로드할 저장소 (username/repo)</div>
         </div>
-        <input type="password" id="settings-anthropic-key" placeholder="sk-ant-...">
+        <input type="text" id="settings-image-repo" placeholder="username/archive">
       </div>
+
+      <!-- AI Provider -->
+      <div class="settings-row" style="margin-top:8px;">
+        <div>
+          <div class="settings-label">AI 제공자</div>
+          <div class="settings-desc">태그 추천 및 맞춤 제안에 사용</div>
+        </div>
+        <select id="settings-ai-provider" onchange="onProviderChange()" style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:5px 8px;font-size:12px;font-family:var(--mono);color:var(--text);outline:none;width:180px;">
+          <option value="anthropic">Anthropic (Claude)</option>
+          <option value="github">GitHub Models</option>
+        </select>
+      </div>
+
+      <!-- Anthropic fields -->
+      <div id="provider-anthropic-fields">
+        <div class="settings-row">
+          <div>
+            <div class="settings-label">Anthropic API Key</div>
+            <div class="settings-desc">console.anthropic.com에서 발급</div>
+          </div>
+          <input type="password" id="settings-anthropic-key" placeholder="sk-ant-...">
+        </div>
+        <div class="settings-row">
+          <div>
+            <div class="settings-label">모델명</div>
+            <div class="settings-desc">기본값: claude-haiku-4-5-20251001</div>
+          </div>
+          <input type="text" id="settings-anthropic-model" placeholder="claude-haiku-4-5-20251001">
+        </div>
+      </div>
+
+      <!-- GitHub Models fields -->
+      <div id="provider-github-fields" style="display:none;">
+        <div class="settings-row">
+          <div>
+            <div class="settings-label">GitHub Token</div>
+            <div class="settings-desc">github.com/settings/tokens (read 권한)</div>
+          </div>
+          <input type="password" id="settings-github-token" placeholder="ghp_ 또는 github_pat_...">
+        </div>
+        <div class="settings-row">
+          <div>
+            <div class="settings-label">모델명</div>
+            <div class="settings-desc">예: gpt-4o, gpt-4o-mini, Meta-Llama-3.1-70B-Instruct</div>
+          </div>
+          <input type="text" id="settings-github-model" placeholder="gpt-4o-mini">
+        </div>
+        <div class="settings-row" style="border:none; padding-top:4px;">
+          <div style="font-size:11px; color:var(--text-hint); line-height:1.6;">
+            GitHub Models는 무료 티어에서 요청 수 제한이 있습니다.<br>
+            모델 목록: <a href="https://github.com/marketplace/models" target="_blank" style="color:var(--text-muted);">github.com/marketplace/models</a>
+          </div>
+        </div>
+      </div>
+
       <div class="settings-row" style="border:none; padding-top:16px; flex-direction:column; align-items:flex-start; gap:8px;">
         <button class="btn-primary" onclick="saveSettings()" style="width:100%; justify-content:center;">저장</button>
         <button class="btn-icon" onclick="syncFromGist()" style="width:100%; justify-content:center;">↓ Gist에서 불러오기</button>
@@ -818,6 +1122,7 @@
     <button class="btn-icon" onclick="closeDetail()">← 뒤로</button>
     <span style="flex:1"></span>
     <button class="btn-icon" id="detail-btn-download" onclick="downloadAllImages()">↓ 이미지 다운로드</button>
+    <button class="btn-primary" onclick="openDetailSuggest()" style="background: var(--text-muted);">✦ 맞춤 제안</button>
     <button class="btn-icon" onclick="editCurrentItem()">편집</button>
     <button class="btn-icon" style="color:var(--danger);" onclick="deleteCurrentItem()">삭제</button>
   </div>
@@ -844,6 +1149,9 @@
       <textarea id="detail-memo-textarea" placeholder="메모를 입력하세요..." oninput="saveMemoDebounced()"></textarea>
       <div class="memo-saved" id="memo-saved-indicator"></div>
     </div>
+
+    <!-- Suggestion area (detail) -->
+    <div id="detail-suggest-area"></div>
   </div>
 </div>
 
@@ -851,6 +1159,140 @@
 <div class="lightbox" id="lightbox" onclick="closeLightbox()">
   <button class="lightbox-close" onclick="closeLightbox()">×</button>
   <img id="lightbox-img" src="" alt="">
+</div>
+
+<!-- Guidelines Management Modal -->
+<div class="overlay" id="guidelines-overlay" onclick="closeGuidelinesModal(event)">
+  <div class="modal" onclick="event.stopPropagation()" style="max-width:620px;">
+    <div class="modal-header">
+      <span class="modal-title">지침 관리</span>
+      <button class="btn-close" onclick="closeGuidelinesModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:12px; color:var(--text-hint); margin-bottom:12px;">
+        지침은 AI 맞춤 제안 시 참고하는 배경 정보입니다. 예: "내 소개", "브랜딩 방향", "인테리어 취향" 등
+      </p>
+      <div id="guidelines-list-container"></div>
+      <button class="btn-add-folder" style="margin-top:8px;" onclick="startNewGuideline()">+ 새 지침 만들기</button>
+
+      <!-- Guideline editor (inline) -->
+      <div id="guideline-editor" style="display:none; margin-top:16px; padding-top:16px; border-top:1px solid var(--border);">
+        <div class="field">
+          <label>지침 이름</label>
+          <input type="text" id="gl-name-input" placeholder="예: 내 소개, 브랜딩 방향">
+        </div>
+        <div class="field">
+          <label>지침 내용 (AI가 참고할 프롬프트)</label>
+          <textarea id="gl-content-input" rows="6"
+            placeholder="예: 나는 30대 여성으로 미니멀한 인테리어를 좋아하고, 친환경 브랜드에 관심이 많습니다. 현재 홈카페 인테리어 아이디어를 수집 중입니다..."></textarea>
+        </div>
+        <div style="display:flex; gap:8px; justify-content:flex-end;">
+          <button class="btn-icon" onclick="cancelGuidelineEdit()">취소</button>
+          <button class="btn-primary" onclick="saveGuideline()">저장</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Global Suggest Modal -->
+<div class="overlay" id="global-suggest-overlay" onclick="closeGlobalSuggest(event)">
+  <div class="modal" onclick="event.stopPropagation()" style="max-width:600px;">
+    <div class="modal-header">
+      <span class="modal-title">✦ 전체 맞춤 제안</span>
+      <button class="btn-close" onclick="closeGlobalSuggest()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="field">
+        <label>참고할 지침 선택</label>
+        <select id="global-suggest-guideline">
+          <option value="">지침 없음 (전체 아카이브만 참고)</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>추가 요청 (선택사항)</label>
+        <input type="text" id="global-suggest-extra" placeholder="예: 주말 활동 아이디어, 새 프로젝트 방향 등">
+      </div>
+      <div class="field">
+        <label>참고할 아카이브 범위</label>
+        <select id="global-suggest-scope">
+          <option value="all">전체 아카이브</option>
+          <option value="current">현재 폴더만</option>
+        </select>
+      </div>
+      <div id="global-suggest-result"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-icon" onclick="closeGlobalSuggest()">닫기</button>
+      <button class="btn-primary" id="btn-run-global-suggest" onclick="runGlobalSuggest()">✦ 제안 받기</button>
+    </div>
+  </div>
+</div>
+
+<!-- Mobile FAB -->
+<button class="fab" onclick="openAddModal()" aria-label="추가">+</button>
+
+<!-- Mobile Tab Bar -->
+<div class="tab-bar">
+  <button class="tab-item active" id="tab-home" onclick="switchTab('home')">
+    <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+      <path d="M3 9.75L12 3l9 6.75V21a.75.75 0 01-.75.75H3.75A.75.75 0 013 21V9.75z"/>
+    </svg>
+    홈
+  </button>
+  <button class="tab-item" id="tab-folders" onclick="switchTab('folders')">
+    <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+      <path d="M2.25 12.75V12A2.25 2.25 0 014.5 9.75h15A2.25 2.25 0 0121.75 12v.75m-8.69-6.44l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z"/>
+    </svg>
+    폴더
+  </button>
+  <button class="tab-item" id="tab-suggest" onclick="openGlobalSuggest()">
+    <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+      <path d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z"/>
+    </svg>
+    제안
+  </button>
+  <button class="tab-item" id="tab-settings" onclick="openSettings()">
+    <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+      <path d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.325.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.241-.438.613-.43.992a7.723 7.723 0 010 .255c-.008.378.137.75.43.991l1.004.827c.424.35.534.955.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.47 6.47 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.281c-.09.543-.56.94-1.11.94h-2.594c-.55 0-1.019-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.991a6.932 6.932 0 010-.255c.007-.38-.138-.751-.43-.992l-1.004-.827a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.086.22-.128.332-.183.582-.495.644-.869l.214-1.28z"/>
+      <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+    </svg>
+    설정
+  </button>
+</div>
+
+<!-- Mobile Drawer (folder list) -->
+<div class="mobile-drawer" id="mobile-drawer">
+  <div class="mobile-drawer-backdrop" onclick="closeMobileDrawer()"></div>
+  <div class="mobile-drawer-panel" id="mobile-drawer-panel">
+    <div style="padding:20px 16px 12px; display:flex; align-items:center; justify-content:space-between;">
+      <span style="font-family:var(--mono);font-size:13px;color:var(--text-muted);">archive</span>
+      <button onclick="closeMobileDrawer()" style="background:none;border:none;color:var(--text-hint);font-size:20px;cursor:pointer;">×</button>
+    </div>
+    <!-- Populated by renderFolderList() -->
+    <div style="padding:0 8px 8px;">
+      <div class="folder-item active" data-folder="all" onclick="selectFolder('all');closeMobileDrawer()">
+        <span class="folder-icon">◈</span><span>전체</span>
+        <span class="folder-count" id="m-count-all">0</span>
+      </div>
+      <div class="folder-item" data-folder="unsorted" onclick="selectFolder('unsorted');closeMobileDrawer()">
+        <span class="folder-icon">○</span><span>미분류</span>
+        <span class="folder-count" id="m-count-unsorted">0</span>
+      </div>
+    </div>
+    <div style="height:1px;background:var(--border);margin:4px 8px;"></div>
+    <div style="padding:0 8px 8px;">
+      <div class="sidebar-label">폴더</div>
+      <div id="mobile-folder-list"></div>
+      <button class="btn-add-folder" onclick="openFolderModal()">+ 새 폴더</button>
+    </div>
+    <div style="height:1px;background:var(--border);margin:4px 8px;"></div>
+    <div style="padding:8px;">
+      <div class="folder-item" onclick="openGuidelinesModal();closeMobileDrawer()">
+        <span class="folder-icon">◎</span><span>지침 관리</span>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- Toast -->
@@ -861,11 +1303,13 @@
 let state = {
   items: [],
   folders: [],
+  guidelines: [],
   currentFolder: 'all',
   currentItemId: null,
   editingItemId: null,
+  editingGuidelineId: null,
   pendingTags: [],
-  settings: { gistToken: '', gistId: '', anthropicKey: '' }
+  settings: { gistToken: '', gistId: '', imageRepo: '', anthropicKey: '', anthropicModel: '', aiProvider: 'anthropic', githubToken: '', githubModel: '' }
 };
 
 let memoSaveTimer = null;
@@ -879,7 +1323,13 @@ function init() {
   renderGrid();
   document.getElementById('settings-gist-token').value = state.settings.gistToken;
   document.getElementById('settings-gist-id').value = state.settings.gistId;
+  document.getElementById('settings-image-repo').value = state.settings.imageRepo || '';
   document.getElementById('settings-anthropic-key').value = state.settings.anthropicKey;
+  document.getElementById('settings-anthropic-model').value = state.settings.anthropicModel;
+  document.getElementById('settings-github-token').value = state.settings.githubToken;
+  document.getElementById('settings-github-model').value = state.settings.githubModel;
+  document.getElementById('settings-ai-provider').value = state.settings.aiProvider || 'anthropic';
+  onProviderChange();
 }
 
 // ─── Storage ──────────────────────────────────────────────────────────────────
@@ -890,6 +1340,7 @@ function loadFromLocal() {
       const d = JSON.parse(raw);
       state.items = d.items || [];
       state.folders = d.folders || [];
+      state.guidelines = d.guidelines || [];
     }
   } catch(e) {}
 }
@@ -897,7 +1348,8 @@ function loadFromLocal() {
 function saveToLocal() {
   localStorage.setItem('archive_data', JSON.stringify({
     items: state.items,
-    folders: state.folders
+    folders: state.folders,
+    guidelines: state.guidelines
   }));
 }
 
@@ -911,11 +1363,22 @@ function loadSettings() {
 function saveSettings() {
   state.settings.gistToken = document.getElementById('settings-gist-token').value.trim();
   state.settings.gistId = document.getElementById('settings-gist-id').value.trim();
+  state.settings.imageRepo = document.getElementById('settings-image-repo').value.trim();
+  state.settings.aiProvider = document.getElementById('settings-ai-provider').value;
   state.settings.anthropicKey = document.getElementById('settings-anthropic-key').value.trim();
+  state.settings.anthropicModel = document.getElementById('settings-anthropic-model').value.trim();
+  state.settings.githubToken = document.getElementById('settings-github-token').value.trim();
+  state.settings.githubModel = document.getElementById('settings-github-model').value.trim();
   localStorage.setItem('archive_settings', JSON.stringify(state.settings));
   document.getElementById('settings-gist-id').value = state.settings.gistId;
   closeSettings();
   showToast('설정이 저장되었습니다');
+}
+
+function onProviderChange() {
+  const p = document.getElementById('settings-ai-provider').value;
+  document.getElementById('provider-anthropic-fields').style.display = p === 'anthropic' ? 'block' : 'none';
+  document.getElementById('provider-github-fields').style.display = p === 'github' ? 'block' : 'none';
 }
 
 function openSettings() {
@@ -931,7 +1394,7 @@ async function syncToGist() {
   const { gistToken, gistId } = state.settings;
   if (!gistToken) { showToast('GitHub Token을 먼저 설정하세요'); return; }
   showToast('Gist에 저장 중...');
-  const content = JSON.stringify({ items: state.items, folders: state.folders }, null, 2);
+  const content = JSON.stringify({ items: state.items, folders: state.folders, guidelines: state.guidelines }, null, 2);
   const payload = { description: 'archive-data', public: false, files: { 'archive.json': { content } } };
   try {
     let res;
@@ -971,6 +1434,7 @@ async function syncFromGist() {
     const parsed = JSON.parse(raw);
     state.items = parsed.items || [];
     state.folders = parsed.folders || [];
+    state.guidelines = parsed.guidelines || [];
     saveToLocal();
     renderFolderList();
     renderGrid();
@@ -993,6 +1457,11 @@ function renderFolderList() {
   // update counts
   document.getElementById('count-all').textContent = state.items.length;
   document.getElementById('count-unsorted').textContent = state.items.filter(i=>!i.folder).length;
+  // mobile counts
+  const ma = document.getElementById('m-count-all');
+  const mu = document.getElementById('m-count-unsorted');
+  if (ma) ma.textContent = state.items.length;
+  if (mu) mu.textContent = state.items.filter(i=>!i.folder).length;
 }
 
 function selectFolder(id) {
@@ -1085,6 +1554,11 @@ function openAddModal(editItem = null) {
   sel.innerHTML = '<option value="">미분류</option>' +
     state.folders.map(f => `<option value="${f.id}" ${editItem?.folder===f.id?'selected':''}>${f.name}</option>`).join('');
 
+  // guideline select
+  const gsel = document.getElementById('input-guideline');
+  gsel.innerHTML = '<option value="">지침 없음</option>' +
+    state.guidelines.map(g => `<option value="${g.id}" ${editItem?.guideline===g.id?'selected':''}>${g.name}</option>`).join('');
+
   renderPendingTags();
   renderImagePreviews();
   document.getElementById('add-overlay').classList.add('open');
@@ -1153,62 +1627,101 @@ function renderImagePreviews() {
 }
 
 async function runAiSuggest() {
-  const key = state.settings.anthropicKey;
-  if (!key) { showToast('설정에서 Anthropic API 키를 입력하세요'); return; }
-  const title = document.getElementById('input-title').value;
-  const url = document.getElementById('input-url').value;
-  if (!title && !url) { showToast('제목 또는 링크를 먼저 입력하세요'); return; }
+  const { aiProvider, anthropicKey, anthropicModel, githubToken, githubModel } = state.settings;
+  const hasKey = aiProvider === 'github' ? githubToken : anthropicKey;
+  if (!hasKey) { showToast('설정에서 API 키를 입력하세요'); return; }
+
+  const title = document.getElementById('input-title').value.trim();
+  const url = document.getElementById('input-url').value.trim();
+  const imageUrls = document.getElementById('input-images').value.split('\n').map(s=>s.trim()).filter(Boolean);
+
+  if (!title && !url && !imageUrls.length) {
+    showToast('제목, 링크, 또는 이미지를 먼저 입력하세요'); return;
+  }
 
   const hint = document.getElementById('ai-tag-hint');
   hint.style.display = 'block';
   hint.className = 'ai-suggestion loading';
-  hint.textContent = 'AI 분석 중';
+  hint.textContent = imageUrls.length ? '이미지 분석 중...' : 'AI 분석 중...';
   document.getElementById('btn-ai-suggest').disabled = true;
 
   const folders = state.folders.map(f => f.name).join(', ') || '없음';
-  const prompt = `다음 아이디어의 정보를 보고, 태그 3~5개와 적합한 폴더를 추천해줘.
-제목: ${title}
-링크: ${url}
+  const textPrompt = `이 아이디어 아카이브 항목을 분석해서 정보를 추출해줘.
+${title ? `현재 제목: ${title}` : '제목 없음'}
+${url ? `링크: ${url}` : ''}
+${imageUrls.length ? `이미지 ${imageUrls.length}장 첨부됨` : ''}
 기존 폴더 목록: ${folders}
 
-JSON 형식으로만 답해줘:
-{"tags": ["태그1","태그2","태그3"], "folder": "폴더명 또는 빈 문자열"}`;
+이미지가 있다면 이미지 내용을 최우선으로 분석해서:
+1. 적절한 제목 (20자 이내, 없으면 현재 제목 유지)
+2. 태그 3~5개
+3. 적합한 폴더명 (기존 폴더 중 선택, 없으면 빈 문자열)
+4. 한 줄 메모 (이미지/링크 내용 요약)
+
+JSON 형식으로만 답해줘 (다른 텍스트 없이):
+{"title": "제목", "tags": ["태그1","태그2","태그3"], "folder": "폴더명 또는 빈 문자열", "memo": "한 줄 요약"}`;
 
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'x-api-key': key,
-        'anthropic-version': '2023-06-01',
-        'content-type': 'application/json',
-        'anthropic-dangerous-direct-browser-access': 'true'
-      },
-      body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001',
-        max_tokens: 300,
-        messages: [{ role: 'user', content: prompt }]
-      })
-    });
-    const data = await res.json();
-    const text = data.content?.[0]?.text || '';
-    const match = text.match(/\{[\s\S]*\}/);
-    if (match) {
-      const parsed = JSON.parse(match[0]);
-      // Apply tags
-      if (parsed.tags) {
-        parsed.tags.forEach(t => { if (!state.pendingTags.includes(t)) state.pendingTags.push(t); });
-        renderPendingTags();
+    let responseText = '';
+
+    // Build image content blocks if images exist
+    const imgBlocks = [];
+    if (imageUrls.length > 0) {
+      hint.textContent = `이미지 로딩 중 (0/${Math.min(imageUrls.length, 3)})...`;
+      // Use up to 3 images to keep token usage reasonable
+      const targetUrls = imageUrls.slice(0, 3);
+      for (let i = 0; i < targetUrls.length; i++) {
+        hint.textContent = `이미지 로딩 중 (${i+1}/${targetUrls.length})...`;
+        try {
+          const b64 = await urlToBase64(targetUrls[i]);
+          imgBlocks.push({ url: targetUrls[i], b64, type: b64.type });
+        } catch(e) {
+          console.warn('이미지 로드 실패:', targetUrls[i], e.message);
+        }
       }
-      // Apply folder suggestion
-      if (parsed.folder) {
-        const match = state.folders.find(f => f.name === parsed.folder);
-        if (match) document.getElementById('input-folder').value = match.id;
-        hint.textContent = `✦ 폴더 "${parsed.folder}" 추천됨`;
-      } else {
-        hint.textContent = '✦ 태그 추천 완료';
-      }
-      hint.className = 'ai-suggestion';
     }
+
+    hint.textContent = 'AI 분석 중...';
+
+    if (imgBlocks.length > 0) {
+      responseText = await callAIWithVision(textPrompt, imgBlocks);
+    } else {
+      await callAIStream(textPrompt, () => {}, (full) => { responseText = full; });
+    }
+
+    const m = responseText.match(/\{[\s\S]*?\}/);
+    if (!m) throw new Error('응답 파싱 실패');
+
+    const parsed = JSON.parse(m[0]);
+
+    // Apply title if empty or different
+    if (parsed.title && !document.getElementById('input-title').value) {
+      document.getElementById('input-title').value = parsed.title;
+    }
+    // Apply tags
+    if (parsed.tags) {
+      parsed.tags.forEach(t => { if (!state.pendingTags.includes(t)) state.pendingTags.push(t); });
+      renderPendingTags();
+    }
+    // Apply folder
+    if (parsed.folder) {
+      const f = state.folders.find(f => f.name === parsed.folder);
+      if (f) document.getElementById('input-folder').value = f.id;
+    }
+    // Apply memo if empty
+    if (parsed.memo && !document.getElementById('input-memo').value) {
+      document.getElementById('input-memo').value = parsed.memo;
+    }
+
+    const parts = [];
+    if (parsed.title && !document.getElementById('input-title').value) parts.push('제목');
+    if (parsed.tags?.length) parts.push(`태그 ${parsed.tags.length}개`);
+    if (parsed.folder) parts.push(`폴더 "${parsed.folder}"`);
+    if (parsed.memo) parts.push('메모');
+
+    hint.className = 'ai-suggestion';
+    hint.textContent = `✦ ${imgBlocks.length ? '이미지 분석 완료 — ' : ''}${parts.join(', ')} 자동 입력됨`;
+
   } catch(e) {
     hint.className = 'ai-suggestion';
     hint.textContent = '오류: ' + e.message;
@@ -1216,16 +1729,93 @@ JSON 형식으로만 답해줘:
   document.getElementById('btn-ai-suggest').disabled = false;
 }
 
-function saveItem() {
+// Convert image URL to base64 (for vision API)
+async function urlToBase64(url) {
+  // For GitHub raw URLs and same-origin, fetch directly
+  // For cross-origin, try anyway (will fail for restricted domains like Instagram)
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`fetch 실패 ${res.status}`);
+  const blob = await res.blob();
+  const mediaType = blob.type || 'image/jpeg';
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve({ b64: reader.result.split(',')[1], type: mediaType });
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
+
+// Vision-capable API call (non-streaming for simplicity)
+async function callAIWithVision(prompt, imgBlocks) {
+  const { aiProvider, anthropicKey, anthropicModel, githubToken, githubModel } = state.settings;
+
+  if (aiProvider === 'github') {
+    // OpenAI-compatible vision format
+    const content = [
+      ...imgBlocks.map(b => ({
+        type: 'image_url',
+        image_url: { url: `data:${b.type};base64,${b.b64}` }
+      })),
+      { type: 'text', text: prompt }
+    ];
+    const res = await fetch('https://models.inference.ai.azure.com/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${githubToken}`,
+        'content-type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: githubModel || 'gpt-4o-mini',
+        max_tokens: 500,
+        messages: [{ role: 'user', content }]
+      })
+    });
+    if (!res.ok) throw new Error(`GitHub Models 오류: ${res.status}`);
+    const data = await res.json();
+    return data.choices?.[0]?.message?.content || '';
+
+  } else {
+    // Anthropic vision format
+    const content = [
+      ...imgBlocks.map(b => ({
+        type: 'image',
+        source: { type: 'base64', media_type: b.type, data: b.b64 }
+      })),
+      { type: 'text', text: prompt }
+    ];
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'x-api-key': anthropicKey,
+        'anthropic-version': '2023-06-01',
+        'content-type': 'application/json',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: anthropicModel || 'claude-haiku-4-5-20251001',
+        max_tokens: 500,
+        messages: [{ role: 'user', content }]
+      })
+    });
+    if (!res.ok) throw new Error(`Anthropic 오류: ${res.status}`);
+    const data = await res.json();
+    return data.content?.[0]?.text || '';
+  }
+}
+
+async function saveItem() {
   const title = document.getElementById('input-title').value.trim();
   if (!title) { showToast('제목을 입력하세요'); return; }
+
   const images = document.getElementById('input-images').value.split('\n').map(s=>s.trim()).filter(Boolean);
+
   const item = {
     id: state.editingItemId || ('i_' + Date.now()),
     title,
     url: document.getElementById('input-url').value.trim(),
     images,
     folder: document.getElementById('input-folder').value,
+    guideline: document.getElementById('input-guideline').value,
     tags: [...state.pendingTags],
     memo: document.getElementById('input-memo').value,
     createdAt: state.editingItemId ?
@@ -1263,6 +1853,14 @@ function openDetail(id) {
     `<a href="${item.url}" target="_blank" rel="noopener">${item.url}</a>` : '';
   document.getElementById('detail-tags').innerHTML =
     (item.tags||[]).map(t=>`<span class="tag">${t}</span>`).join('');
+
+  // guideline badge
+  const glName = item.guideline ? state.guidelines.find(g=>g.id===item.guideline)?.name : null;
+  const glBadge = document.getElementById('detail-guideline-badge');
+  if (glBadge) glBadge.textContent = glName ? `◎ ${glName}` : '';
+
+  // clear previous suggestion
+  document.getElementById('detail-suggest-area').innerHTML = '';
 
   const imgs = item.images || [];
   document.getElementById('detail-images').innerHTML = imgs.map(src =>
@@ -1362,6 +1960,612 @@ function showToast(msg) {
   toastTimer = setTimeout(() => el.classList.remove('show'), 2500);
 }
 
+// ─── Guidelines ──────────────────────────────────────────────────────────────
+function openGuidelinesModal() {
+  renderGuidelinesList();
+  document.getElementById('guideline-editor').style.display = 'none';
+  document.getElementById('guidelines-overlay').classList.add('open');
+}
+function closeGuidelinesModal(e) {
+  if (e && e.target !== document.getElementById('guidelines-overlay')) return;
+  document.getElementById('guidelines-overlay').classList.remove('open');
+}
+
+function renderGuidelinesList() {
+  const container = document.getElementById('guidelines-list-container');
+  if (!state.guidelines.length) {
+    container.innerHTML = '<p style="font-size:12px;color:var(--text-hint);padding:8px 0;">아직 지침이 없습니다.</p>';
+    return;
+  }
+  container.innerHTML = state.guidelines.map(g => `
+    <div class="guideline-item">
+      <span class="guideline-item-name">${g.name}</span>
+      <span class="guideline-item-preview">${g.content}</span>
+      <div class="guideline-actions">
+        <button class="btn-tiny" onclick="editGuideline('${g.id}')">편집</button>
+        <button class="btn-tiny danger" onclick="deleteGuideline('${g.id}')">삭제</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function startNewGuideline() {
+  state.editingGuidelineId = null;
+  document.getElementById('gl-name-input').value = '';
+  document.getElementById('gl-content-input').value = '';
+  document.getElementById('guideline-editor').style.display = 'block';
+  setTimeout(() => document.getElementById('gl-name-input').focus(), 50);
+}
+
+function editGuideline(id) {
+  const g = state.guidelines.find(g=>g.id===id);
+  if (!g) return;
+  state.editingGuidelineId = id;
+  document.getElementById('gl-name-input').value = g.name;
+  document.getElementById('gl-content-input').value = g.content;
+  document.getElementById('guideline-editor').style.display = 'block';
+  setTimeout(() => document.getElementById('gl-name-input').focus(), 50);
+}
+
+function cancelGuidelineEdit() {
+  document.getElementById('guideline-editor').style.display = 'none';
+  state.editingGuidelineId = null;
+}
+
+function saveGuideline() {
+  const name = document.getElementById('gl-name-input').value.trim();
+  const content = document.getElementById('gl-content-input').value.trim();
+  if (!name || !content) { showToast('이름과 내용을 입력하세요'); return; }
+
+  if (state.editingGuidelineId) {
+    const g = state.guidelines.find(g=>g.id===state.editingGuidelineId);
+    if (g) { g.name = name; g.content = content; }
+  } else {
+    state.guidelines.push({ id: 'g_' + Date.now(), name, content });
+  }
+  saveToLocal();
+  renderGuidelinesList();
+  cancelGuidelineEdit();
+  showToast(`지침 "${name}" 저장됨`);
+}
+
+function deleteGuideline(id) {
+  if (!confirm('이 지침을 삭제하시겠습니까?')) return;
+  state.guidelines = state.guidelines.filter(g=>g.id!==id);
+  // remove from items that referenced it
+  state.items.forEach(i => { if (i.guideline === id) i.guideline = ''; });
+  saveToLocal();
+  renderGuidelinesList();
+  showToast('지침 삭제됨');
+}
+
+// ─── AI Suggest (shared core) ─────────────────────────────────────────────────
+async function callAIStream(prompt, onChunk, onDone) {
+  const { aiProvider, anthropicKey, anthropicModel, githubToken, githubModel } = state.settings;
+
+  if (aiProvider === 'github') {
+    await callGitHubModelsStream(prompt, githubToken, githubModel || 'gpt-4o-mini', onChunk, onDone);
+  } else {
+    await callAnthropicStream(prompt, anthropicKey, anthropicModel || 'claude-haiku-4-5-20251001', onChunk, onDone);
+  }
+}
+
+async function callAnthropicStream(prompt, key, model, onChunk, onDone) {
+  if (!key) { showToast('설정에서 Anthropic API 키를 입력하세요'); return; }
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'x-api-key': key,
+      'anthropic-version': '2023-06-01',
+      'content-type': 'application/json',
+      'anthropic-dangerous-direct-browser-access': 'true'
+    },
+    body: JSON.stringify({ model, max_tokens: 1000, stream: true,
+      messages: [{ role: 'user', content: prompt }] })
+  });
+  if (!res.ok) throw new Error(`Anthropic 오류: ${res.status}`);
+
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buf = '', full = '';
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buf += decoder.decode(value, { stream: true });
+    const lines = buf.split('\n'); buf = lines.pop();
+    for (const line of lines) {
+      if (!line.startsWith('data: ')) continue;
+      const data = line.slice(6).trim();
+      if (data === '[DONE]') break;
+      try {
+        const evt = JSON.parse(data);
+        if (evt.type === 'content_block_delta' && evt.delta?.text) {
+          full += evt.delta.text; onChunk(full);
+        }
+      } catch(e) {}
+    }
+  }
+  onDone(full);
+}
+
+async function callGitHubModelsStream(prompt, token, model, onChunk, onDone) {
+  if (!token) { showToast('설정에서 GitHub Token을 입력하세요'); return; }
+  const res = await fetch('https://models.inference.ai.azure.com/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'content-type': 'application/json'
+    },
+    body: JSON.stringify({
+      model,
+      max_tokens: 1000,
+      stream: true,
+      messages: [{ role: 'user', content: prompt }]
+    })
+  });
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`GitHub Models 오류: ${res.status} — ${err.slice(0,120)}`);
+  }
+
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buf = '', full = '';
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buf += decoder.decode(value, { stream: true });
+    const lines = buf.split('\n'); buf = lines.pop();
+    for (const line of lines) {
+      if (!line.startsWith('data: ')) continue;
+      const data = line.slice(6).trim();
+      if (data === '[DONE]') break;
+      try {
+        const evt = JSON.parse(data);
+        const delta = evt.choices?.[0]?.delta?.content;
+        if (delta) { full += delta; onChunk(full); }
+      } catch(e) {}
+    }
+  }
+  onDone(full);
+}
+
+function buildSuggestionPanel(containerId, { onSaveAsCard, onSaveAsMemo }) {
+  const area = document.getElementById(containerId);
+  const panel = document.createElement('div');
+  panel.className = 'suggestion-panel';
+  panel.innerHTML = `
+    <div class="suggestion-panel-header">
+      <span class="section-label">✦ AI 맞춤 제안</span>
+      <button class="btn-tiny" onclick="this.closest('.suggestion-panel').remove()">✕</button>
+    </div>
+    <div class="suggestion-content streaming" id="${containerId}-text">생성 중...</div>
+    <div class="suggestion-save-row" id="${containerId}-actions" style="display:none;">
+      <button class="btn-primary" onclick="(${onSaveAsCard.toString()})()">+ 새 카드로 저장</button>
+      <button class="btn-icon" onclick="(${onSaveAsMemo.toString()})()">메모에 추가</button>
+      <button class="btn-icon" onclick="navigator.clipboard.writeText(document.getElementById('${containerId}-text').textContent).then(()=>showToast('복사됨'))">복사</button>
+    </div>
+  `;
+  area.innerHTML = '';
+  area.appendChild(panel);
+  return panel;
+}
+
+// ─── Detail Page Suggest ──────────────────────────────────────────────────────
+async function openDetailSuggest() {
+  const item = state.items.find(i=>i.id===state.currentItemId);
+  if (!item) return;
+
+  const guideline = item.guideline ? state.guidelines.find(g=>g.id===item.guideline) : null;
+
+  const prompt = buildItemPrompt(item, guideline);
+  const containerId = 'detail-suggest-area';
+  let resultText = '';
+
+  const panel = buildSuggestionPanel(containerId, {
+    onSaveAsCard: () => saveSuggestionAsCard(resultText, item),
+    onSaveAsMemo: () => saveSuggestionAsMemo(resultText)
+  });
+
+  const textEl = document.getElementById(containerId + '-text');
+  const actionsEl = document.getElementById(containerId + '-actions');
+
+  try {
+    await callAIStream(prompt,
+      (chunk) => { textEl.textContent = chunk; },
+      (full) => {
+        resultText = full;
+        textEl.classList.remove('streaming');
+        actionsEl.style.display = 'flex';
+      }
+    );
+  } catch(e) {
+    textEl.classList.remove('streaming');
+    textEl.textContent = '오류: ' + e.message;
+  }
+}
+
+function buildItemPrompt(item, guideline) {
+  const glBlock = guideline
+    ? `\n\n[지침 — ${guideline.name}]\n${guideline.content}`
+    : '';
+  const tags = (item.tags||[]).join(', ') || '없음';
+  return `당신은 창의적인 아이디어 컨설턴트입니다.${glBlock}
+
+[아카이브된 아이디어]
+제목: ${item.title}
+링크: ${item.url || '없음'}
+태그: ${tags}
+메모: ${item.memo || '없음'}
+
+위 아이디어와 지침을 바탕으로, 이 사람에게 맞춤형 아이디어나 제안을 구체적으로 작성해주세요.
+실용적이고 행동 가능한 내용으로, 3~5가지 제안을 한국어로 작성해주세요.`;
+}
+
+function saveSuggestionAsCard(text, sourceItem) {
+  const newItem = {
+    id: 'i_' + Date.now(),
+    title: `✦ 제안: ${sourceItem.title}`,
+    url: '',
+    images: [],
+    folder: sourceItem.folder || '',
+    guideline: sourceItem.guideline || '',
+    tags: ['AI제안', ...(sourceItem.tags||[]).slice(0,2)],
+    memo: text,
+    createdAt: Date.now()
+  };
+  state.items.push(newItem);
+  saveToLocal();
+  renderFolderList();
+  renderGrid();
+  showToast('새 카드로 저장되었습니다');
+}
+
+function saveSuggestionAsMemo(text) {
+  const item = state.items.find(i=>i.id===state.currentItemId);
+  if (!item) return;
+  const existing = item.memo ? item.memo + '\n\n' : '';
+  item.memo = existing + `--- AI 제안 (${new Date().toLocaleDateString('ko-KR')}) ---\n` + text;
+  saveToLocal();
+  document.getElementById('detail-memo-textarea').value = item.memo;
+  showToast('메모에 추가되었습니다');
+}
+
+// ─── Global Suggest ───────────────────────────────────────────────────────────
+function openGlobalSuggest() {
+  const gsel = document.getElementById('global-suggest-guideline');
+  gsel.innerHTML = '<option value="">지침 없음 (전체 아카이브만 참고)</option>' +
+    state.guidelines.map(g => `<option value="${g.id}">${g.name}</option>`).join('');
+  document.getElementById('global-suggest-result').innerHTML = '';
+  document.getElementById('global-suggest-extra').value = '';
+  document.getElementById('global-suggest-overlay').classList.add('open');
+}
+function closeGlobalSuggest(e) {
+  if (e && e.target !== document.getElementById('global-suggest-overlay')) return;
+  document.getElementById('global-suggest-overlay').classList.remove('open');
+}
+
+async function runGlobalSuggest() {
+  const glId = document.getElementById('global-suggest-guideline').value;
+  const extra = document.getElementById('global-suggest-extra').value.trim();
+  const scope = document.getElementById('global-suggest-scope').value;
+  const guideline = glId ? state.guidelines.find(g=>g.id===glId) : null;
+
+  let items = state.items;
+  if (scope === 'current' && state.currentFolder !== 'all') {
+    items = state.currentFolder === 'unsorted'
+      ? items.filter(i=>!i.folder)
+      : items.filter(i=>i.folder===state.currentFolder);
+  }
+
+  const archiveSummary = items.slice(-30).map(i =>
+    `- ${i.title}${i.tags?.length ? ` [${i.tags.join(', ')}]` : ''}`
+  ).join('\n');
+
+  const glBlock = guideline ? `\n\n[지침 — ${guideline.name}]\n${guideline.content}` : '';
+  const extraBlock = extra ? `\n\n추가 요청: ${extra}` : '';
+
+  const prompt = `당신은 창의적인 아이디어 컨설턴트입니다.${glBlock}
+
+[아카이브된 아이디어 목록]
+${archiveSummary || '(아이디어 없음)'}
+${extraBlock}
+
+위 아카이브 내용과 지침을 종합적으로 분석하여, 이 사람에게 맞춤형 아이디어나 인사이트를 제안해주세요.
+패턴, 트렌드, 연결고리를 발견하고 실용적인 제안을 5가지 이상 한국어로 작성해주세요.`;
+
+  const containerId = 'global-suggest-result';
+  let resultText = '';
+
+  document.getElementById('btn-run-global-suggest').disabled = true;
+
+  const panel = buildSuggestionPanel(containerId, {
+    onSaveAsCard: () => {
+      const newItem = {
+        id: 'i_' + Date.now(),
+        title: `✦ 전체 제안${guideline ? ` (${guideline.name})` : ''}`,
+        url: '',
+        images: [],
+        folder: '',
+        guideline: glId,
+        tags: ['AI제안', '전체분석'],
+        memo: resultText,
+        createdAt: Date.now()
+      };
+      state.items.push(newItem);
+      saveToLocal();
+      renderFolderList();
+      renderGrid();
+      showToast('새 카드로 저장되었습니다');
+    },
+    onSaveAsMemo: () => { showToast('전체 제안은 메모에 추가할 아이템이 없습니다. 카드로 저장하세요.'); }
+  });
+
+  const textEl = document.getElementById(containerId + '-text');
+  const actionsEl = document.getElementById(containerId + '-actions');
+
+  try {
+    await callAIStream(prompt,
+      (chunk) => { textEl.textContent = chunk; },
+      (full) => {
+        resultText = full;
+        textEl.classList.remove('streaming');
+        actionsEl.style.display = 'flex';
+      }
+    );
+  } catch(e) {
+    textEl.classList.remove('streaming');
+    textEl.textContent = '오류: ' + e.message;
+  }
+  document.getElementById('btn-run-global-suggest').disabled = false;
+}
+
+// ─── Image Upload (GitHub Issues) ────────────────────────────────────────────
+// GitHub Issues asset upload: POST /repos/:owner/:repo/issues with a temp issue,
+// but the real trick is using the upload endpoint directly.
+// We use the markdown image upload API via Issues attachment endpoint.
+
+async function uploadImageToGitHub(file) {
+  const { gistToken, imageRepo } = state.settings;
+  if (!gistToken) throw new Error('GitHub Token이 설정되지 않았습니다');
+  if (!imageRepo || !imageRepo.includes('/')) throw new Error('설정에서 이미지 저장 저장소를 입력하세요 (username/repo)');
+
+  const [owner, repo] = imageRepo.split('/');
+
+  // GitHub issue assets upload endpoint
+  const formData = new FormData();
+  formData.append('content', file);
+
+  // Use the upload endpoint (requires repo scope)
+  const uploadRes = await fetch(
+    `https://uploads.github.com/repos/${owner}/${repo}/contents`,
+    {
+      method: 'POST',
+      headers: {
+        'Authorization': `token ${gistToken}`,
+        'Accept': 'application/vnd.github.v3+json',
+        'Content-Type': file.type || 'application/octet-stream',
+        'Content-Disposition': `attachment; filename="${file.name || 'image.jpg'}"`,
+      },
+      body: file
+    }
+  );
+
+  if (uploadRes.ok) {
+    const data = await uploadRes.json();
+    if (data.url) return data.url;
+  }
+
+  // Fallback: encode as base64 and push to repo contents API
+  return await uploadViaContentsAPI(file, owner, repo, gistToken);
+}
+
+async function uploadViaContentsAPI(file, owner, repo, token) {
+  const base64 = await fileToBase64(file);
+  const filename = `archive-imgs/${Date.now()}-${(file.name||'image.jpg').replace(/[^a-zA-Z0-9._-]/g,'_')}`;
+
+  const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${filename}`, {
+    method: 'PUT',
+    headers: {
+      'Authorization': `token ${token}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      message: `archive image upload`,
+      content: base64
+    })
+  });
+
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.message || `업로드 실패 (${res.status})`);
+  }
+
+  const data = await res.json();
+  // Use raw URL for direct access
+  return data.content.download_url;
+}
+
+function fileToBase64(file) {
+  return new Promise((res, rej) => {
+    const reader = new FileReader();
+    reader.onload = () => res(reader.result.split(',')[1]);
+    reader.onerror = rej;
+    reader.readAsDataURL(file);
+  });
+}
+
+async function fetchImageAsFile(url) {
+  // Try direct fetch; may fail for cross-origin resources
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`이미지 fetch 실패: ${res.status}`);
+  const blob = await res.blob();
+  const ext = blob.type.split('/')[1] || 'jpg';
+  return new File([blob], `mirrored.${ext}`, { type: blob.type });
+}
+
+// Handle file drop
+function handleImageDrop(e) {
+  e.preventDefault();
+  e.currentTarget.style.background = '';
+  handleImageFiles(e.dataTransfer.files);
+}
+
+async function handleImageFiles(files) {
+  const { gistToken, imageRepo } = state.settings;
+  if (!gistToken || !imageRepo) {
+    showToast('설정에서 GitHub Token과 이미지 저장 저장소를 먼저 입력하세요');
+    return;
+  }
+
+  const statusEl = document.getElementById('img-upload-status');
+  statusEl.textContent = `0 / ${files.length} 업로드 중...`;
+
+  const uploaded = [];
+  for (let i = 0; i < files.length; i++) {
+    statusEl.textContent = `${i + 1} / ${files.length} 업로드 중...`;
+    try {
+      const url = await uploadViaContentsAPI(files[i],
+        ...state.settings.imageRepo.split('/'),
+        state.settings.gistToken
+      );
+      uploaded.push(url);
+    } catch(e) {
+      showToast(`${files[i].name} 실패: ${e.message}`);
+    }
+  }
+
+  if (uploaded.length) {
+    const textarea = document.getElementById('input-images');
+    const existing = textarea.value.trim();
+    textarea.value = existing ? existing + '\n' + uploaded.join('\n') : uploaded.join('\n');
+    renderImagePreviews();
+    statusEl.textContent = `✓ ${uploaded.length}장 업로드 완료 (GitHub 영구 저장)`;
+  } else {
+    statusEl.textContent = '';
+  }
+}
+
+// Mirror external URLs to GitHub
+async function mirrorAllUrls() {
+  const { gistToken, imageRepo } = state.settings;
+  if (!gistToken || !imageRepo) {
+    showToast('설정에서 GitHub Token과 이미지 저장 저장소를 먼저 입력하세요');
+    return;
+  }
+
+  const textarea = document.getElementById('input-images');
+  const urls = textarea.value.split('\n').map(s => s.trim()).filter(Boolean);
+  if (!urls.length) { showToast('미러링할 URL이 없습니다'); return; }
+
+  const statusEl = document.getElementById('img-mirror-status');
+  statusEl.style.display = 'block';
+
+  const newUrls = [];
+  for (let i = 0; i < urls.length; i++) {
+    const url = urls[i];
+    // Skip if already GitHub-hosted
+    if (url.includes('githubusercontent.com') || url.includes('raw.githubusercontent.com')) {
+      newUrls.push(url);
+      statusEl.textContent = `${i+1}/${urls.length} — 이미 GitHub URL, 건너뜀`;
+      continue;
+    }
+    statusEl.textContent = `${i+1}/${urls.length} 미러링 중...`;
+    try {
+      const file = await fetchImageAsFile(url);
+      const [owner, repo] = imageRepo.split('/');
+      const ghUrl = await uploadViaContentsAPI(file, owner, repo, gistToken);
+      newUrls.push(ghUrl);
+      statusEl.textContent = `${i+1}/${urls.length} ✓ 완료`;
+    } catch(e) {
+      // Keep original if mirror fails
+      newUrls.push(url);
+      statusEl.textContent = `${i+1}/${urls.length} — 미러링 실패 (원본 유지): ${e.message}`;
+    }
+    await new Promise(r => setTimeout(r, 300));
+  }
+
+  textarea.value = newUrls.join('\n');
+  renderImagePreviews();
+  statusEl.textContent = `✓ 미러링 완료. GitHub에 영구 저장되었습니다.`;
+}
+
+// ─── Mobile Tab Bar ───────────────────────────────────────────────────────────
+function switchTab(tab) {
+  document.querySelectorAll('.tab-item').forEach(el => el.classList.remove('active'));
+  document.getElementById('tab-' + tab)?.classList.add('active');
+  if (tab === 'folders') openMobileDrawer();
+}
+
+function openMobileDrawer() {
+  renderMobileFolderList();
+  document.getElementById('mobile-drawer').classList.add('open');
+}
+function closeMobileDrawer() {
+  document.getElementById('mobile-drawer').classList.remove('open');
+  document.getElementById('tab-home').classList.add('active');
+  document.getElementById('tab-folders').classList.remove('active');
+}
+
+function renderMobileFolderList() {
+  const list = document.getElementById('mobile-folder-list');
+  list.innerHTML = state.folders.map(f => `
+    <div class="folder-item ${state.currentFolder === f.id ? 'active' : ''}"
+         onclick="selectFolder('${f.id}');closeMobileDrawer()">
+      <span class="folder-icon">▷</span>
+      <span>${f.name}</span>
+      <span class="folder-count">${state.items.filter(i=>i.folder===f.id).length}</span>
+    </div>
+  `).join('');
+  document.getElementById('m-count-all').textContent = state.items.length;
+  document.getElementById('m-count-unsorted').textContent = state.items.filter(i=>!i.folder).length;
+
+  // sync active state
+  document.querySelectorAll('#mobile-drawer .folder-item').forEach(el => {
+    el.classList.toggle('active', el.dataset.folder === state.currentFolder);
+  });
+}
+
+// ─── PWA & Share Target ───────────────────────────────────────────────────────
+function registerSW() {
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
+  }
+}
+
+function handleShareTarget() {
+  const params = new URLSearchParams(window.location.search);
+  const sharedUrl   = params.get('url')   || '';
+  const sharedTitle = params.get('title') || '';
+  const sharedText  = params.get('text')  || '';
+
+  if (!sharedUrl && !sharedTitle && !sharedText) return;
+
+  // Clear the URL params without reload
+  window.history.replaceState({}, '', window.location.pathname);
+
+  // Pre-fill the add modal and open it
+  const url = sharedUrl || (sharedText.startsWith('http') ? sharedText : '');
+  const title = sharedTitle || (!sharedText.startsWith('http') ? sharedText : '');
+
+  // Small delay to let the app init finish
+  setTimeout(() => {
+    openAddModal();
+    if (url) document.getElementById('input-url').value = url;
+    if (title) document.getElementById('input-title').value = title;
+    if (url && !title) {
+      // Auto-guess title from URL
+      try {
+        const u = new URL(url);
+        const parts = u.pathname.split('/').filter(Boolean);
+        const guess = parts[parts.length-1]?.replace(/[-_]/g,' ') || u.hostname;
+        document.getElementById('input-title').value = guess;
+      } catch(e) {}
+    }
+    showToast('공유된 링크가 자동으로 입력되었습니다');
+  }, 300);
+}
+
 // ─── Keyboard shortcuts ───────────────────────────────────────────────────────
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') {
@@ -1370,6 +2574,8 @@ document.addEventListener('keydown', e => {
     if (document.getElementById('add-overlay').classList.contains('open')) { closeAddModal(); return; }
     if (document.getElementById('folder-overlay').classList.contains('open')) { closeFolderModal(); return; }
     if (document.getElementById('settings-overlay').classList.contains('open')) { closeSettings(); return; }
+    if (document.getElementById('guidelines-overlay').classList.contains('open')) { closeGuidelinesModal(); return; }
+    if (document.getElementById('global-suggest-overlay').classList.contains('open')) { closeGlobalSuggest(); return; }
   }
   if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
     e.preventDefault();
@@ -1379,6 +2585,8 @@ document.addEventListener('keydown', e => {
 
 // ─── Run ──────────────────────────────────────────────────────────────────────
 init();
+registerSW();
+handleShareTarget();
 </script>
 </body>
 </html>
