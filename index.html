@@ -2314,19 +2314,26 @@ async function openDetailSuggest() {
 
 function buildItemPrompt(item, guideline) {
   const glBlock = guideline
-    ? `\n\n[지침 — ${guideline.name}]\n${guideline.content}`
+    ? `\n\n[나에 대한 배경 정보 — ${guideline.name}]\n${guideline.content}`
     : '';
   const tags = (item.tags||[]).join(', ') || '없음';
-  return `당신은 창의적인 아이디어 컨설턴트입니다.${glBlock}
+  const hasMemo = item.memo && item.memo.trim();
 
-[아카이브된 아이디어]
+  return `당신은 실용적인 크리에이터 조력자입니다.${glBlock}
+
+[아카이브 참고 정보]
 제목: ${item.title}
-링크: ${item.url || '없음'}
-태그: ${tags}
-메모: ${item.memo || '없음'}
+${item.url ? `링크: ${item.url}` : ''}
+${tags !== '없음' ? `태그: ${tags}` : ''}
 
-위 아이디어와 지침을 바탕으로, 이 사람에게 맞춤형 아이디어나 제안을 구체적으로 작성해주세요.
-실용적이고 행동 가능한 내용으로, 3~5가지 제안을 한국어로 작성해주세요.`;
+[메모 — 핵심 인풋]
+${hasMemo ? item.memo.trim() : '(메모 없음)'}
+
+---
+위 메모를 실제로 적용한 결과물을 만들어주세요.
+메모에 프롬프트나 구조가 있다면 그것을 직접 실행하고,
+배경 정보에 나온 나의 상황(직업, 제품, 관심사 등)에 맞춰 구체적인 예시로 채워주세요.
+추상적인 조언이 아니라, 바로 쓸 수 있는 실제 결과물을 한국어로 작성해주세요.`;
 }
 
 function saveSuggestionAsCard(text, sourceItem) {
