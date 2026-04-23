@@ -2223,25 +2223,61 @@ async function callGitHubModelsStream(prompt, token, model, onChunk, onDone) {
   onDone(full);
 }
 
-function buildSuggestionPanel(containerId, { onSaveAsCard, onSaveAsMemo }) {
+// suggestion panel result stored here, keyed by containerId
+const _suggestionResults = {};
+
+function buildSuggestionPanel(containerId) {
   const area = document.getElementById(containerId);
+  area.innerHTML = '';
   const panel = document.createElement('div');
   panel.className = 'suggestion-panel';
+  panel.id = containerId + '-panel';
   panel.innerHTML = `
     <div class="suggestion-panel-header">
       <span class="section-label">✦ AI 맞춤 제안</span>
-      <button class="btn-tiny" onclick="this.closest('.suggestion-panel').remove()">✕</button>
+      <button class="btn-tiny" onclick="document.getElementById('${containerId}-panel').remove()">✕</button>
     </div>
     <div class="suggestion-content streaming" id="${containerId}-text">생성 중...</div>
     <div class="suggestion-save-row" id="${containerId}-actions" style="display:none;">
-      <button class="btn-primary" onclick="(${onSaveAsCard.toString()})()">+ 새 카드로 저장</button>
-      <button class="btn-icon" onclick="(${onSaveAsMemo.toString()})()">메모에 추가</button>
-      <button class="btn-icon" onclick="navigator.clipboard.writeText(document.getElementById('${containerId}-text').textContent).then(()=>showToast('복사됨'))">복사</button>
+      <button class="btn-primary" onclick="handleSuggestionSave('${containerId}','card')">+ 새 카드로 저장</button>
+      <button class="btn-icon" onclick="handleSuggestionSave('${containerId}','memo')">메모에 추가</button>
+      <button class="btn-icon" onclick="navigator.clipboard.writeText(_suggestionResults['${containerId}']||'').then(()=>showToast('복사됨'))">복사</button>
     </div>
   `;
-  area.innerHTML = '';
   area.appendChild(panel);
   return panel;
+}
+
+function handleSuggestionSave(containerId, mode) {
+  const text = _suggestionResults[containerId] || '';
+  if (!text) { showToast('저장할 내용이 없습니다'); return; }
+
+  if (containerId === 'detail-suggest-area') {
+    if (mode === 'card') {
+      const item = state.items.find(i=>i.id===state.currentItemId);
+      if (!item) return;
+      saveSuggestionAsCard(text, item);
+    } else {
+      saveSuggestionAsMemo(text);
+    }
+  } else {
+    // global suggest
+    if (mode === 'card') {
+      const glId = document.getElementById('global-suggest-guideline').value;
+      const guideline = glId ? state.guidelines.find(g=>g.id===glId) : null;
+      const newItem = {
+        id: 'i_' + Date.now(),
+        title: `✦ 전체 제안${guideline ? ` (${guideline.name})` : ''}`,
+        url: '', images: [], folder: '', guideline: glId || '',
+        tags: ['AI제안', '전체분석'], memo: text, createdAt: Date.now()
+      };
+      state.items.push(newItem);
+      saveToLocal(); renderFolderList(); renderGrid();
+      showToast('새 카드로 저장되었습니다');
+    } else {
+      showToast('전체 제안은 카드로 저장하세요');
+    }
+  }
 }
 
 // ─── Detail Page Suggest ──────────────────────────────────────────────────────
@@ -2250,15 +2286,11 @@ async function openDetailSuggest() {
   if (!item) return;
 
   const guideline = item.guideline ? state.guidelines.find(g=>g.id===item.guideline) : null;
-
   const prompt = buildItemPrompt(item, guideline);
   const containerId = 'detail-suggest-area';
-  let resultText = '';
 
-  const panel = buildSuggestionPanel(containerId, {
-    onSaveAsCard: () => saveSuggestionAsCard(resultText, item),
-    onSaveAsMemo: () => saveSuggestionAsMemo(resultText)
-  });
+  buildSuggestionPanel(containerId);
+  _suggestionResults[containerId] = '';
 
   const textEl = document.getElementById(containerId + '-text');
   const actionsEl = document.getElementById(containerId + '-actions');
@@ -2267,7 +2299,7 @@ async function openDetailSuggest() {
     await callAIStream(prompt,
       (chunk) => { textEl.textContent = chunk; },
       (full) => {
-        resultText = full;
+        _suggestionResults[containerId] = full;
         textEl.classList.remove('streaming');
         actionsEl.style.display = 'flex';
       }
@@ -2317,12 +2349,32 @@ function saveSuggestionAsCard(text, sourceItem) {
 function saveSuggestionAsMemo(text) {
   const item = state.items.find(i=>i.id===state.currentItemId);
   if (!item) return;
-  const existing = item.memo ? item.memo + '\n\n' : '';
-  item.memo = existing + `--- AI 제안 (${new Date().toLocaleDateString('ko-KR')}) ---\n` + text;
+
+  // Append to data
+  const separator = `\n\n--- AI 제안 (${new Date().toLocaleDateString('ko-KR')}) ---\n`;
+  item.memo = (item.memo ? item.memo + separator : '') + text;
   saveToLocal();
+
+  // Update textarea
   const ta = document.getElementById('detail-memo-textarea');
   ta.value = item.memo;
   autoResize(ta);
+
+  // Add a visual AI section below memo (in addition to updating textarea)
+  const memoWrap = ta.closest('.detail-memo');
+  // Remove any existing appended AI block
+  memoWrap.querySelectorAll('.memo-ai-block').forEach(el => el.remove());
+  const block = document.createElement('div');
+  block.className = 'memo-ai-block';
+  block.style.cssText = 'margin-top:12px;padding-top:12px;border-top:1px dashed var(--border-strong);';
+  block.innerHTML = `
+    <div style="font-size:10px;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-hint);margin-bottom:8px;">✦ AI 제안</div>
+    <div style="font-size:13px;line-height:1.75;color:var(--text);white-space:pre-wrap;">${text}</div>
+  `;
+  memoWrap.appendChild(block);
+
+  // Hide the suggestion panel
+  document.getElementById('detail-suggest-area').innerHTML = '';
   showToast('메모에 추가되었습니다');
 }
 
@@ -2370,31 +2422,10 @@ ${extraBlock}
 패턴, 트렌드, 연결고리를 발견하고 실용적인 제안을 5가지 이상 한국어로 작성해주세요.`;
 
   const containerId = 'global-suggest-result';
-  let resultText = '';
-
   document.getElementById('btn-run-global-suggest').disabled = true;
 
-  const panel = buildSuggestionPanel(containerId, {
-    onSaveAsCard: () => {
-      const newItem = {
-        id: 'i_' + Date.now(),
-        title: `✦ 전체 제안${guideline ? ` (${guideline.name})` : ''}`,
-        url: '',
-        images: [],
-        folder: '',
-        guideline: glId,
-        tags: ['AI제안', '전체분석'],
-        memo: resultText,
-        createdAt: Date.now()
-      };
-      state.items.push(newItem);
-      saveToLocal();
-      renderFolderList();
-      renderGrid();
-      showToast('새 카드로 저장되었습니다');
-    },
-    onSaveAsMemo: () => { showToast('전체 제안은 메모에 추가할 아이템이 없습니다. 카드로 저장하세요.'); }
-  });
+  buildSuggestionPanel(containerId);
+  _suggestionResults[containerId] = '';
 
   const textEl = document.getElementById(containerId + '-text');
   const actionsEl = document.getElementById(containerId + '-actions');
@@ -2403,7 +2434,7 @@ ${extraBlock}
     await callAIStream(prompt,
       (chunk) => { textEl.textContent = chunk; },
       (full) => {
-        resultText = full;
+        _suggestionResults[containerId] = full;
         textEl.classList.remove('streaming');
         actionsEl.style.display = 'flex';
       }
