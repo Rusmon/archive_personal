@@ -13,7 +13,7 @@
 <link rel="apple-touch-icon" href="icon-192.png">
 <title>아카이브</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500&family=Noto+Serif+KR:wght@300;400;500&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
 <style>
   :root {
     --bg: #f5f4f0;
@@ -257,6 +257,7 @@
     background: var(--surface2);
     overflow: hidden;
     position: relative;
+    container-type: size;
   }
   .card-thumb img {
     width: 100%; height: 100%;
@@ -270,6 +271,30 @@
     justify-content: center;
     font-size: 28px;
     opacity: 0.3;
+  }
+
+  /* ── Typo Thumbnail ── */
+  .card-thumb-typo {
+    width: 100%; height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    box-sizing: border-box;
+  }
+  .card-thumb-typo span {
+    font-family: 'Noto Serif KR', 'Georgia', serif;
+    font-weight: 400;
+    font-size: clamp(11px, 3.5cqw, 18px);
+    line-height: 1.5;
+    text-align: center;
+    word-break: keep-all;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    max-width: 100%;
+    letter-spacing: 0.02em;
   }
   .card-img-count {
     position: absolute;
@@ -554,7 +579,9 @@
     color: var(--text);
     font-family: var(--sans);
     resize: none;
-    min-height: 120px;
+    min-height: 80px;
+    height: auto;
+    overflow: hidden;
     line-height: 1.7;
   }
   .detail-memo textarea::placeholder { color: var(--text-hint); }
@@ -1146,7 +1173,7 @@
       <span class="section-label">메모</span>
     </div>
     <div class="detail-memo">
-      <textarea id="detail-memo-textarea" placeholder="메모를 입력하세요..." oninput="saveMemoDebounced()"></textarea>
+      <textarea id="detail-memo-textarea" placeholder="메모를 입력하세요..." oninput="autoResize(this);saveMemoDebounced()"></textarea>
       <div class="memo-saved" id="memo-saved-indicator"></div>
     </div>
 
@@ -1496,6 +1523,60 @@ function saveFolder() {
 }
 
 // ─── Grid ─────────────────────────────────────────────────────────────────────
+// ─── Typo Thumbnail ──────────────────────────────────────────────────────────
+// Palette: bg color + text color pairs (warm/cool/neutral tones)
+const THUMB_PALETTES = [
+  { bg: '#E8E4DC', text: '#2A2620' }, // warm sand
+  { bg: '#D6E4E0', text: '#1A3030' }, // sage
+  { bg: '#E4D6E8', text: '#2A1A30' }, // muted lavender
+  { bg: '#E8DDD6', text: '#302018' }, // terracotta light
+  { bg: '#D6DCE8', text: '#1A2030' }, // slate blue
+  { bg: '#E8E4D0', text: '#282410' }, // parchment
+  { bg: '#D8E8D6', text: '#182018' }, // soft green
+  { bg: '#E8D8D6', text: '#301818' }, // dusty rose
+  { bg: '#D6E4E8', text: '#182830' }, // sky
+  { bg: '#E4E8D6', text: '#242810' }, // yellow-green
+  { bg: '#2A2620', text: '#E8E4DC' }, // dark sand (inverted)
+  { bg: '#1A3030', text: '#D6E4E0' }, // dark sage (inverted)
+];
+
+// Dark mode variants (same hues, darker bg)
+const THUMB_PALETTES_DARK = [
+  { bg: '#2C2820', text: '#E8E0CC' },
+  { bg: '#1C2C28', text: '#C8DDD8' },
+  { bg: '#28202C', text: '#DDD0E8' },
+  { bg: '#2C2418', text: '#E8D8C0' },
+  { bg: '#1C2028', text: '#C8D4E8' },
+  { bg: '#2C2818', text: '#E8E0C0' },
+  { bg: '#202C20', text: '#C8E0C8' },
+  { bg: '#2C2020', text: '#E8C8C8' },
+  { bg: '#1C2428', text: '#C0D8E0' },
+  { bg: '#282C1C', text: '#DCE0C0' },
+  { bg: '#E0DCD4', text: '#2A2620' },
+  { bg: '#C8D8D4', text: '#1A2C28' },
+];
+
+function titleToThumbPalette(title) {
+  // Simple hash of title string → consistent index
+  let h = 0;
+  for (let i = 0; i < title.length; i++) h = (h * 31 + title.charCodeAt(i)) >>> 0;
+  const idx = h % THUMB_PALETTES.length;
+  const dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  return dark ? THUMB_PALETTES_DARK[idx] : THUMB_PALETTES[idx];
+}
+
+function makeTypoThumb(title) {
+  const { bg, text } = titleToThumbPalette(title || '');
+  // Truncate with ellipsis at word boundary if very long
+  const maxChars = 28;
+  const display = title && title.length > maxChars
+    ? title.slice(0, maxChars).trimEnd() + '…'
+    : (title || '(제목 없음)');
+  return `<div class="card-thumb-typo" style="background:${bg};">
+    <span style="color:${text};">${display}</span>
+  </div>`;
+}
+
 function renderGrid() {
   const q = document.getElementById('search-input').value.toLowerCase();
   let items = state.items;
@@ -1509,7 +1590,7 @@ function renderGrid() {
     i.memo?.toLowerCase().includes(q)
   );
 
-  items = [...items].reverse(); // newest first
+  items = [...items].reverse();
 
   const grid = document.getElementById('grid');
   if (items.length === 0) {
@@ -1523,7 +1604,12 @@ function renderGrid() {
 
   grid.innerHTML = items.map(item => {
     const imgs = item.images || [];
-    const thumb = imgs[0] ? `<img src="${imgs[0]}" alt="" onerror="this.parentElement.innerHTML='<div class=card-thumb-placeholder>◈</div>'">` : '<div class="card-thumb-placeholder">◈</div>';
+    // If images exist use first image, fallback to typo thumb (also on error)
+    const thumb = imgs[0]
+      ? `<img src="${imgs[0]}" alt=""
+           style="width:100%;height:100%;object-fit:cover;display:block;"
+           onerror="this.parentElement.innerHTML='${makeTypoThumb(item.title).replace(/'/g, "\\'")}'">` 
+      : makeTypoThumb(item.title);
     const countBadge = imgs.length > 1 ? `<span class="card-img-count">${imgs.length}</span>` : '';
     const tags = (item.tags||[]).slice(0,3).map(t=>`<span class="tag">${t}</span>`).join('');
     return `<div class="card" onclick="openDetail('${item.id}')">
@@ -1871,6 +1957,7 @@ function openDetail(id) {
 
   document.getElementById('detail-memo-textarea').value = item.memo || '';
   document.getElementById('memo-saved-indicator').textContent = '';
+  setTimeout(() => autoResize(document.getElementById('detail-memo-textarea')), 0);
 
   document.getElementById('detail-overlay').classList.add('open');
 }
@@ -1896,6 +1983,12 @@ function deleteCurrentItem() {
   renderGrid();
   closeDetail();
   showToast('삭제되었습니다');
+}
+
+// Auto-resize textarea to fit content
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = el.scrollHeight + 'px';
 }
 
 // Memo auto-save
@@ -2227,7 +2320,9 @@ function saveSuggestionAsMemo(text) {
   const existing = item.memo ? item.memo + '\n\n' : '';
   item.memo = existing + `--- AI 제안 (${new Date().toLocaleDateString('ko-KR')}) ---\n` + text;
   saveToLocal();
-  document.getElementById('detail-memo-textarea').value = item.memo;
+  const ta = document.getElementById('detail-memo-textarea');
+  ta.value = item.memo;
+  autoResize(ta);
   showToast('메모에 추가되었습니다');
 }
 
