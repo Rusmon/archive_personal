@@ -987,8 +987,118 @@
     .grid { grid-template-columns: repeat(2, 1fr); gap: 8px; padding: 10px; }
   }
 
-  /* ── Scrollbar ── */
-  ::-webkit-scrollbar { width: 5px; }
+  /* ── Detail Chat ── */
+  .detail-chat-wrap {
+    margin-top: 32px;
+    border-top: 1px solid var(--border);
+    padding-top: 20px;
+  }
+  .detail-chat-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+  }
+  .chat-messages {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 14px;
+    max-height: 480px;
+    overflow-y: auto;
+    padding-right: 4px;
+  }
+  .chat-msg {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    animation: fadeIn 0.15s ease;
+  }
+  .chat-msg-role {
+    font-size: 10px;
+    font-family: var(--mono);
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-hint);
+  }
+  .chat-msg-bubble {
+    background: var(--surface2);
+    border-radius: var(--radius-sm);
+    padding: 10px 13px;
+    font-size: 13px;
+    line-height: 1.7;
+    color: var(--text);
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .chat-msg.user .chat-msg-bubble {
+    background: var(--accent-soft);
+    border: 1px solid var(--border);
+  }
+  .chat-msg.assistant .chat-msg-bubble {
+    background: var(--surface);
+    border: 1px solid var(--border);
+  }
+  /* Markdown inside chat bubble */
+  .chat-msg-bubble h1 { font-size: 16px; font-weight: 600; margin: 0 0 8px; }
+  .chat-msg-bubble h2 { font-size: 14px; font-weight: 600; margin: 10px 0 5px; }
+  .chat-msg-bubble h3 { font-size: 13px; font-weight: 600; margin: 8px 0 4px; color: var(--text-muted); }
+  .chat-msg-bubble strong { font-weight: 600; }
+  .chat-msg-bubble em { font-style: italic; }
+  .chat-msg-bubble code { font-family: var(--mono); font-size: 11px; background: var(--surface2); padding: 1px 5px; border-radius: 3px; }
+  .chat-msg-bubble ul, .chat-msg-bubble ol { padding-left: 18px; margin: 4px 0; }
+  .chat-msg-bubble li { margin: 2px 0; }
+  .chat-msg-bubble p { margin: 0 0 6px; }
+  .chat-msg-bubble p:last-child { margin: 0; }
+  .chat-msg-bubble hr { border: none; border-top: 1px solid var(--border); margin: 8px 0; }
+
+  .chat-input-row {
+    display: flex;
+    gap: 8px;
+    align-items: flex-end;
+  }
+  .chat-input-wrap {
+    flex: 1;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 8px 12px;
+    transition: border-color 0.15s;
+  }
+  .chat-input-wrap:focus-within { border-color: var(--border-strong); }
+  .chat-input {
+    width: 100%;
+    background: none;
+    border: none;
+    outline: none;
+    font-size: 13px;
+    color: var(--text);
+    font-family: var(--sans);
+    resize: none;
+    min-height: 20px;
+    max-height: 160px;
+    overflow-y: auto;
+    line-height: 1.6;
+  }
+  .chat-input::placeholder { color: var(--text-hint); }
+  .chat-reset {
+    font-size: 11px;
+    font-family: var(--mono);
+    color: var(--text-hint);
+    cursor: pointer;
+    background: none;
+    border: none;
+    padding: 2px 0;
+    transition: color 0.15s;
+  }
+  .chat-reset:hover { color: var(--text-muted); }
+  .chat-streaming::after {
+    content: '▋';
+    animation: blink 0.8s step-end infinite;
+    color: var(--text-muted);
+  }
+  @keyframes blink { 50% { opacity: 0; } }
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 10px; }
 </style>
@@ -1264,6 +1374,7 @@
     <span style="flex:1"></span>
     <button class="btn-icon" id="detail-btn-download" onclick="downloadAllImages()">↓ 이미지 다운로드</button>
     <button class="btn-primary" onclick="openDetailSuggest()" style="background: var(--text-muted);">✦ 맞춤 제안</button>
+    <button class="btn-icon" onclick="toggleDetailChat()">💬 AI 대화</button>
     <button class="btn-icon" onclick="editCurrentItem()">편집</button>
     <button class="btn-icon" style="color:var(--danger);" onclick="deleteCurrentItem()">삭제</button>
   </div>
@@ -1291,6 +1402,25 @@
 
     <!-- Suggestion area (detail) -->
     <div id="detail-suggest-area"></div>
+
+    <!-- Chat area (detail) -->
+    <div class="detail-chat-wrap" id="detail-chat-wrap" style="display:none;">
+      <div class="detail-chat-header">
+        <span class="section-label">💬 AI 대화</span>
+        <button class="chat-reset" onclick="resetChat()">대화 초기화</button>
+      </div>
+      <div class="chat-messages" id="chat-messages"></div>
+      <div class="chat-input-row">
+        <div class="chat-input-wrap">
+          <textarea class="chat-input" id="chat-input"
+            placeholder="질문하거나 요청하세요..."
+            rows="1"
+            onkeydown="handleChatKey(event)"
+            oninput="autoResizeChat(this)"></textarea>
+        </div>
+        <button class="btn-primary" onclick="sendChat()" id="chat-send-btn">전송</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -2435,8 +2565,9 @@ async function callAnthropicStream(prompt, key, model, onChunk, onDone) {
   onDone(full);
 }
 
-async function callGitHubModelsStream(prompt, token, model, onChunk, onDone) {
+async function callGitHubModelsStream(prompt, token, model, onChunk, onDone, messagesOverride = null) {
   if (!token) { showToast('설정에서 GitHub Token을 입력하세요'); return; }
+  const messages = messagesOverride || [{ role: 'user', content: prompt }];
   const res = await fetch('https://models.inference.ai.azure.com/chat/completions', {
     method: 'POST',
     headers: {
@@ -2447,7 +2578,7 @@ async function callGitHubModelsStream(prompt, token, model, onChunk, onDone) {
       model,
       max_tokens: 1000,
       stream: true,
-      messages: [{ role: 'user', content: prompt }]
+      messages
     })
   });
   if (!res.ok) {
@@ -2947,6 +3078,214 @@ function handleShareTarget() {
     showToast('공유된 링크가 자동으로 입력되었습니다');
   }, 300);
 }
+
+// ─── Detail Chat ──────────────────────────────────────────────────────────────
+let chatHistory = []; // { role: 'user'|'assistant', content: string }
+
+function resetChat() {
+  chatHistory = [];
+  document.getElementById('chat-messages').innerHTML = '';
+  renderChatWelcome();
+  document.getElementById('chat-input').focus();
+}
+
+function toggleDetailChat() {
+  const wrap = document.getElementById('detail-chat-wrap');
+  const isOpen = wrap.style.display !== 'none';
+  wrap.style.display = isOpen ? 'none' : 'block';
+  if (!isOpen) {
+    if (chatHistory.length === 0) renderChatWelcome();
+    setTimeout(() => document.getElementById('chat-input').focus(), 100);
+  }
+}
+
+function renderChatWelcome() {
+  const item = state.items.find(i => i.id === state.currentItemId);
+  if (!item) return;
+  const glName = item.guideline
+    ? state.guidelines.find(g => g.id === item.guideline)?.name
+    : null;
+  const memoCount = (item.memos || []).filter(m => m.content).length;
+  const notice = [
+    `**${item.title}** 아이템 기반으로 대화를 시작합니다.`,
+    glName ? `지침 "${glName}"이 적용되어 있습니다.` : '',
+    memoCount ? `메모 ${memoCount}개가 컨텍스트에 포함됩니다.` : '',
+    '\n무엇이든 질문하거나 요청해보세요.'
+  ].filter(Boolean).join('  \n');
+  appendChatMsg('system', notice);
+}
+
+function buildChatSystemPrompt() {
+  const item = state.items.find(i => i.id === state.currentItemId);
+  if (!item) return '';
+  const guideline = item.guideline
+    ? state.guidelines.find(g => g.id === item.guideline)
+    : null;
+  const glBlock = guideline
+    ? `\n\n[나에 대한 배경 정보 — ${guideline.name}]\n${guideline.content}`
+    : '';
+  const memoText = (item.memos || [])
+    .filter(m => m.content)
+    .map(m => m.title ? `[${m.title}]\n${m.content}` : m.content)
+    .join('\n\n---\n\n');
+  const tags = (item.tags || []).join(', ');
+
+  return `당신은 유용한 AI 조력자입니다. 사용자의 아카이브 아이템을 바탕으로 질문에 답하거나 요청을 수행합니다.${glBlock}
+
+[아카이브 아이템 정보]
+제목: ${item.title}
+${item.url ? `링크: ${item.url}` : ''}
+${tags ? `태그: ${tags}` : ''}
+
+${memoText ? `[메모 내용]\n${memoText}` : ''}
+
+위 정보를 바탕으로 사용자와 자연스럽게 대화하세요. 메모 내용을 깊이 이해하고 구체적으로 도움을 주세요. 한국어로 답하세요.`;
+}
+
+function appendChatMsg(role, content, streaming = false) {
+  const container = document.getElementById('chat-messages');
+  const div = document.createElement('div');
+  div.className = `chat-msg ${role}`;
+
+  const roleLabel = role === 'user' ? '나' : role === 'assistant' ? 'AI' : '';
+  const bubbleId = 'bubble-' + Date.now();
+
+  div.innerHTML = `
+    ${roleLabel ? `<span class="chat-msg-role">${roleLabel}</span>` : ''}
+    <div class="chat-msg-bubble ${streaming ? 'chat-streaming' : ''}" id="${bubbleId}">
+      ${role === 'system' ? renderMarkdown(content) : (role === 'user' ? escHtml(content) : renderMarkdown(content))}
+    </div>
+  `;
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+  return bubbleId;
+}
+
+function updateChatBubble(bubbleId, content, done = false) {
+  const el = document.getElementById(bubbleId);
+  if (!el) return;
+  if (done) {
+    el.classList.remove('chat-streaming');
+    el.innerHTML = renderMarkdown(content);
+  } else {
+    el.textContent = content;
+  }
+  const container = document.getElementById('chat-messages');
+  container.scrollTop = container.scrollHeight;
+}
+
+async function sendChat() {
+  const input = document.getElementById('chat-input');
+  const text = input.value.trim();
+  if (!text) return;
+
+  const { aiProvider, anthropicKey, anthropicModel, githubToken, githubModel } = state.settings;
+  const hasKey = aiProvider === 'github' ? githubToken : anthropicKey;
+  if (!hasKey) { showToast('설정에서 API 키를 입력하세요'); return; }
+
+  input.value = '';
+  input.style.height = 'auto';
+
+  // Add user message to display
+  appendChatMsg('user', text);
+  // Add to history for multi-turn
+  chatHistory.push({ role: 'user', content: text });
+
+  const sendBtn = document.getElementById('chat-send-btn');
+  sendBtn.disabled = true;
+
+  const bubbleId = appendChatMsg('assistant', '', true);
+  let full = '';
+
+  try {
+    const systemPrompt = buildChatSystemPrompt();
+
+    if (aiProvider === 'github') {
+      await callGitHubModelsStream(
+        null, githubToken, githubModel || 'gpt-4o-mini',
+        (chunk) => { updateChatBubble(bubbleId, chunk); full = chunk; },
+        (done) => { full = done; },
+        [{ role: 'system', content: systemPrompt }, ...chatHistory]
+      );
+    } else {
+      await callAnthropicStreamChat(
+        systemPrompt, chatHistory, anthropicKey, anthropicModel || 'claude-haiku-4-5-20251001',
+        (chunk) => { updateChatBubble(bubbleId, chunk); full = chunk; },
+        (done) => { full = done; }
+      );
+    }
+
+    updateChatBubble(bubbleId, full, true);
+    // Add assistant reply to history so next turn has context
+    chatHistory.push({ role: 'assistant', content: full });
+  } catch(e) {
+    updateChatBubble(bubbleId, '오류: ' + e.message, true);
+    chatHistory.pop(); // remove failed user message
+  }
+
+  sendBtn.disabled = false;
+  input.focus();
+}
+
+// Anthropic streaming with system + history
+async function callAnthropicStreamChat(systemPrompt, messages, key, model, onChunk, onDone) {
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'x-api-key': key,
+      'anthropic-version': '2023-06-01',
+      'content-type': 'application/json',
+      'anthropic-dangerous-direct-browser-access': 'true'
+    },
+    body: JSON.stringify({
+      model, max_tokens: 1500, stream: true,
+      system: systemPrompt,
+      messages
+    })
+  });
+  if (!res.ok) throw new Error(`Anthropic 오류: ${res.status}`);
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buf = '', full = '';
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buf += decoder.decode(value, { stream: true });
+    const lines = buf.split('\n'); buf = lines.pop();
+    for (const line of lines) {
+      if (!line.startsWith('data: ')) continue;
+      const data = line.slice(6).trim();
+      if (data === '[DONE]') break;
+      try {
+        const evt = JSON.parse(data);
+        if (evt.type === 'content_block_delta' && evt.delta?.text) {
+          full += evt.delta.text; onChunk(full);
+        }
+      } catch(e) {}
+    }
+  }
+  onDone(full);
+}
+
+function handleChatKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendChat();
+  }
+}
+
+function autoResizeChat(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 160) + 'px';
+}
+
+// Reset chat when detail closes
+const _origCloseDetail = closeDetail;
+closeDetail = function() {
+  chatHistory = [];
+  document.getElementById('detail-chat-wrap').style.display = 'none';
+  _origCloseDetail();
+};
 
 // ─── Keyboard shortcuts ───────────────────────────────────────────────────────
 document.addEventListener('keydown', e => {
