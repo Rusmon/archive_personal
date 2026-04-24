@@ -1718,19 +1718,80 @@ function renderFolderList() {
     <div class="folder-item ${state.currentFolder === f.id ? 'active' : ''}"
          data-folder="${f.id}" onclick="selectFolder('${f.id}')">
       <span class="folder-icon">▷</span>
-      <span>${f.name}</span>
+      <span class="folder-name" ondblclick="startFolderRename('${f.id}', event)">${f.name}</span>
       <span class="folder-count">${state.items.filter(i=>i.folder===f.id).length}</span>
+      <button class="btn-tiny danger" style="opacity:0;margin-left:2px;"
+        onclick="deleteFolder('${f.id}', event)" title="삭제">✕</button>
     </div>
   `).join('');
+
+  // Show delete button on hover
+  list.querySelectorAll('.folder-item').forEach(el => {
+    const btn = el.querySelector('.btn-tiny');
+    el.addEventListener('mouseenter', () => { if(btn) btn.style.opacity = '1'; });
+    el.addEventListener('mouseleave', () => { if(btn) btn.style.opacity = '0'; });
+  });
 
   // update counts
   document.getElementById('count-all').textContent = state.items.length;
   document.getElementById('count-unsorted').textContent = state.items.filter(i=>!i.folder).length;
-  // mobile counts
   const ma = document.getElementById('m-count-all');
   const mu = document.getElementById('m-count-unsorted');
   if (ma) ma.textContent = state.items.length;
   if (mu) mu.textContent = state.items.filter(i=>!i.folder).length;
+}
+
+function startFolderRename(id, e) {
+  e.stopPropagation();
+  const folder = state.folders.find(f => f.id === id);
+  if (!folder) return;
+
+  const nameEl = e.target;
+  const input = document.createElement('input');
+  input.value = folder.name;
+  input.style.cssText = 'background:none;border:none;border-bottom:1px solid var(--border-strong);outline:none;font-size:13px;font-family:var(--sans);color:var(--text);width:100%;';
+
+  nameEl.replaceWith(input);
+  input.focus();
+  input.select();
+
+  const commit = () => {
+    const newName = input.value.trim();
+    if (newName && newName !== folder.name) {
+      folder.name = newName;
+      saveToLocal();
+      // Update topbar if this folder is selected
+      if (state.currentFolder === id) {
+        document.getElementById('topbar-title').textContent = newName;
+      }
+      showToast(`"${newName}"으로 변경됨`);
+    }
+    renderFolderList();
+  };
+
+  input.addEventListener('blur', commit);
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); input.blur(); }
+    if (e.key === 'Escape') { input.value = folder.name; input.blur(); }
+  });
+}
+
+function deleteFolder(id, e) {
+  e.stopPropagation();
+  const folder = state.folders.find(f => f.id === id);
+  if (!folder) return;
+  const count = state.items.filter(i => i.folder === id).length;
+  const msg = count > 0
+    ? `"${folder.name}" 폴더를 삭제할까요?\n아이템 ${count}개는 미분류로 이동됩니다.`
+    : `"${folder.name}" 폴더를 삭제할까요?`;
+  if (!confirm(msg)) return;
+  state.items.forEach(i => { if (i.folder === id) i.folder = ''; });
+  state.folders = state.folders.filter(f => f.id !== id);
+  if (state.currentFolder === id) selectFolder('all');
+  saveToLocal();
+  renderFolderList();
+  renderGrid();
+  showToast('폴더가 삭제되었습니다');
 }
 
 function selectFolder(id) {
