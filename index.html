@@ -563,14 +563,99 @@
   }
   .detail-images img:hover { opacity: 0.85; }
 
-  .detail-memo {
+  /* ── Multi-memo cards ── */
+  .memo-card {
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: var(--radius);
-    padding: 16px;
-    margin-bottom: 24px;
+    margin-bottom: 12px;
+    overflow: hidden;
+    transition: border-color 0.15s;
   }
-  .detail-memo textarea {
+  .memo-card:focus-within { border-color: var(--border-strong); }
+
+  .memo-card-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px 8px;
+    border-bottom: 1px solid var(--border);
+  }
+  .memo-card-title-input {
+    flex: 1;
+    background: none;
+    border: none;
+    outline: none;
+    font-size: 12px;
+    font-weight: 500;
+    font-family: var(--sans);
+    color: var(--text-muted);
+    letter-spacing: 0.04em;
+  }
+  .memo-card-title-input::placeholder { color: var(--text-hint); }
+  .memo-card-actions { display: flex; gap: 2px; }
+
+  /* Rendered view */
+  .memo-rendered {
+    padding: 14px 16px;
+    min-height: 60px;
+    cursor: text;
+    font-size: 14px;
+    line-height: 1.75;
+    color: var(--text);
+  }
+  .memo-rendered:empty::before {
+    content: '클릭해서 메모를 입력하세요...';
+    color: var(--text-hint);
+  }
+  .memo-rendered h1 {
+    font-size: 20px; font-weight: 600;
+    margin: 0 0 10px; line-height: 1.3;
+    color: var(--text);
+  }
+  .memo-rendered h2 {
+    font-size: 16px; font-weight: 600;
+    margin: 14px 0 6px; line-height: 1.3;
+    color: var(--text);
+  }
+  .memo-rendered h3 {
+    font-size: 14px; font-weight: 600;
+    margin: 12px 0 4px; line-height: 1.3;
+    color: var(--text-muted);
+  }
+  .memo-rendered p { margin: 0 0 8px; }
+  .memo-rendered p:last-child { margin-bottom: 0; }
+  .memo-rendered strong { font-weight: 600; }
+  .memo-rendered em { font-style: italic; }
+  .memo-rendered code {
+    font-family: var(--mono);
+    font-size: 12px;
+    background: var(--surface2);
+    padding: 1px 5px;
+    border-radius: 3px;
+  }
+  .memo-rendered ul, .memo-rendered ol {
+    padding-left: 20px; margin: 4px 0 8px;
+  }
+  .memo-rendered li { margin: 2px 0; }
+  .memo-rendered hr {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 12px 0;
+  }
+  .memo-rendered blockquote {
+    border-left: 3px solid var(--border-strong);
+    padding-left: 12px;
+    color: var(--text-muted);
+    margin: 8px 0;
+  }
+
+  /* Edit view */
+  .memo-edit-wrap { display: none; padding: 12px 16px 14px; }
+  .memo-edit-wrap.active { display: block; }
+  .memo-rendered.hidden { display: none; }
+
+  .memo-textarea {
     width: 100%;
     background: none;
     border: none;
@@ -582,18 +667,47 @@
     min-height: 80px;
     height: auto;
     overflow: hidden;
-    line-height: 1.7;
+    line-height: 1.75;
   }
-  .detail-memo textarea::placeholder { color: var(--text-hint); }
+  .memo-edit-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid var(--border);
+  }
+  .memo-edit-hint {
+    font-size: 10px;
+    color: var(--text-hint);
+    font-family: var(--mono);
+  }
+
   .memo-saved {
     font-size: 11px;
     color: var(--text-hint);
     font-family: var(--mono);
-    text-align: right;
-    margin-top: 4px;
-    height: 14px;
     transition: opacity 0.5s;
   }
+
+  .btn-add-memo {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    border-radius: var(--radius-sm);
+    border: 1px dashed var(--border-strong);
+    background: none;
+    color: var(--text-hint);
+    font-size: 12px;
+    font-family: var(--sans);
+    cursor: pointer;
+    width: 100%;
+    margin-bottom: 24px;
+    transition: color 0.15s, border-color 0.15s;
+    justify-content: center;
+  }
+  .btn-add-memo:hover { color: var(--text-muted); border-color: var(--text-hint); }
 
   /* ── Settings modal ── */
   .settings-row {
@@ -1172,10 +1286,8 @@
     <div class="detail-images-header" style="margin-top:24px;">
       <span class="section-label">메모</span>
     </div>
-    <div class="detail-memo">
-      <textarea id="detail-memo-textarea" placeholder="메모를 입력하세요..." oninput="autoResize(this);saveMemoDebounced()"></textarea>
-      <div class="memo-saved" id="memo-saved-indicator"></div>
-    </div>
+    <div id="detail-memos-container"></div>
+    <button class="btn-add-memo" onclick="addMemo()">+ 메모 추가</button>
 
     <!-- Suggestion area (detail) -->
     <div id="detail-suggest-area"></div>
@@ -1955,9 +2067,17 @@ function openDetail(id) {
   document.getElementById('detail-images-section').style.display = imgs.length ? 'block' : 'none';
   document.getElementById('detail-btn-download').style.display = imgs.length ? 'flex' : 'none';
 
-  document.getElementById('detail-memo-textarea').value = item.memo || '';
-  document.getElementById('memo-saved-indicator').textContent = '';
-  setTimeout(() => autoResize(document.getElementById('detail-memo-textarea')), 0);
+  // Migrate old single memo → memos array
+  if (!item.memos) {
+    item.memos = item.memo
+      ? [{ id: 'm_' + Date.now(), title: '', content: item.memo }]
+      : [];
+    delete item.memo;
+    saveToLocal();
+  }
+
+  document.getElementById('detail-suggest-area').innerHTML = '';
+  renderMemos();
 
   document.getElementById('detail-overlay').classList.add('open');
 }
@@ -1985,30 +2105,162 @@ function deleteCurrentItem() {
   showToast('삭제되었습니다');
 }
 
-// Auto-resize textarea to fit content
-function autoResize(el) {
+// ─── Multi-memo system ────────────────────────────────────────────────────────
+
+// Simple markdown → HTML renderer
+function renderMarkdown(text) {
+  if (!text) return '';
+  let html = text
+    // Headings
+    .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+    .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+    .replace(/^# (.+)$/gm, '<h1>$1</h1>')
+    // Bold / italic
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g, '<em>$1</em>')
+    // Inline code
+    .replace(/`([^`]+)`/g, '<code>$1</code>')
+    // HR
+    .replace(/^---$/gm, '<hr>')
+    // Unordered list
+    .replace(/^\- (.+)$/gm, '<li>$1</li>')
+    // Ordered list
+    .replace(/^\d+\. (.+)$/gm, '<li>$1</li>')
+    // Blockquote
+    .replace(/^> (.+)$/gm, '<blockquote>$1</blockquote>');
+
+  // Wrap consecutive <li> in <ul>
+  html = html.replace(/(<li>.*<\/li>\n?)+/g, m => `<ul>${m}</ul>`);
+
+  // Paragraphs: wrap lines that aren't block elements
+  const blockTags = /^<(h[1-3]|ul|ol|li|hr|blockquote|div)/;
+  html = html.split('\n').map(line => {
+    if (!line.trim()) return '';
+    if (blockTags.test(line.trim())) return line;
+    return `<p>${line}</p>`;
+  }).join('\n');
+
+  return html;
+}
+
+function renderMemos() {
+  const item = state.items.find(i => i.id === state.currentItemId);
+  if (!item) return;
+  const container = document.getElementById('detail-memos-container');
+  container.innerHTML = '';
+  (item.memos || []).forEach(memo => {
+    container.appendChild(makeMemoCard(memo));
+  });
+}
+
+function makeMemoCard(memo) {
+  const card = document.createElement('div');
+  card.className = 'memo-card';
+  card.dataset.memoId = memo.id;
+
+  card.innerHTML = `
+    <div class="memo-card-header">
+      <input class="memo-card-title-input" type="text"
+        placeholder="메모 제목 (선택사항)"
+        value="${escHtml(memo.title || '')}"
+        oninput="saveMemoField('${memo.id}','title',this.value)">
+      <div class="memo-card-actions">
+        <button class="btn-tiny" onclick="deleteMemo('${memo.id}')" title="삭제">✕</button>
+      </div>
+    </div>
+    <div class="memo-rendered ${memo.content ? '' : 'empty'}"
+         onclick="enterMemoEdit('${memo.id}')">${renderMarkdown(memo.content)}</div>
+    <div class="memo-edit-wrap" id="edit-${memo.id}">
+      <textarea class="memo-textarea"
+        placeholder="# 제목&#10;## 소제목&#10;### 항목&#10;&#10;내용을 입력하세요..."
+        oninput="autoResizeMemo(this);saveMemoField('${memo.id}','content',this.value)"
+        onblur="exitMemoEdit('${memo.id}')">${escHtml(memo.content || '')}</textarea>
+      <div class="memo-edit-footer">
+        <span class="memo-edit-hint"># h1 &nbsp;## h2 &nbsp;### h3 &nbsp;**굵게** &nbsp;*기울임* &nbsp;\`코드\`</span>
+        <span class="memo-saved" id="memo-saved-${memo.id}"></span>
+      </div>
+    </div>
+  `;
+  return card;
+}
+
+function escHtml(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function enterMemoEdit(memoId) {
+  const editWrap = document.getElementById('edit-' + memoId);
+  const rendered = editWrap.previousElementSibling;
+  rendered.classList.add('hidden');
+  editWrap.classList.add('active');
+  const ta = editWrap.querySelector('textarea');
+  autoResizeMemo(ta);
+  ta.focus();
+  // Move cursor to end
+  ta.selectionStart = ta.selectionEnd = ta.value.length;
+}
+
+function exitMemoEdit(memoId) {
+  const editWrap = document.getElementById('edit-' + memoId);
+  const rendered = editWrap.previousElementSibling;
+  const item = state.items.find(i => i.id === state.currentItemId);
+  const memo = item?.memos?.find(m => m.id === memoId);
+  if (memo) rendered.innerHTML = renderMarkdown(memo.content);
+  rendered.classList.remove('hidden');
+  editWrap.classList.remove('active');
+}
+
+function autoResizeMemo(ta) {
   const scrollY = window.scrollY;
-  el.style.height = 'auto';
-  el.style.height = el.scrollHeight + 'px';
+  ta.style.height = 'auto';
+  ta.style.height = ta.scrollHeight + 'px';
   window.scrollTo({ top: scrollY, behavior: 'instant' });
 }
 
-// Memo auto-save
-function saveMemoDebounced() {
-  clearTimeout(memoSaveTimer);
-  const ind = document.getElementById('memo-saved-indicator');
-  ind.textContent = '';
-  memoSaveTimer = setTimeout(() => {
-    const item = state.items.find(i=>i.id===state.currentItemId);
-    if (item) {
-      item.memo = document.getElementById('detail-memo-textarea').value;
-      saveToLocal();
+let memoSaveTimers = {};
+function saveMemoField(memoId, field, value) {
+  const item = state.items.find(i => i.id === state.currentItemId);
+  const memo = item?.memos?.find(m => m.id === memoId);
+  if (!memo) return;
+  memo[field] = value;
+
+  clearTimeout(memoSaveTimers[memoId]);
+  memoSaveTimers[memoId] = setTimeout(() => {
+    saveToLocal();
+    const ind = document.getElementById('memo-saved-' + memoId);
+    if (ind) {
       ind.textContent = '저장됨';
       ind.style.opacity = '1';
       setTimeout(() => { ind.style.opacity = '0'; }, 2000);
     }
-  }, 800);
+  }, 600);
 }
+
+function addMemo() {
+  const item = state.items.find(i => i.id === state.currentItemId);
+  if (!item) return;
+  if (!item.memos) item.memos = [];
+  const memo = { id: 'm_' + Date.now(), title: '', content: '' };
+  item.memos.push(memo);
+  saveToLocal();
+  const container = document.getElementById('detail-memos-container');
+  const card = makeMemoCard(memo);
+  container.appendChild(card);
+  // Auto-open edit mode
+  setTimeout(() => enterMemoEdit(memo.id), 50);
+}
+
+function deleteMemo(memoId) {
+  const item = state.items.find(i => i.id === state.currentItemId);
+  if (!item) return;
+  if (!confirm('이 메모를 삭제하시겠습니까?')) return;
+  item.memos = item.memos.filter(m => m.id !== memoId);
+  saveToLocal();
+  document.querySelector(`.memo-card[data-memo-id="${memoId}"]`)?.remove();
+}
+
+// Legacy compat — saveMemoDebounced used by saveSuggestionAsMemo
+function saveMemoDebounced() {}
 
 // ─── Image Download ───────────────────────────────────────────────────────────
 async function downloadAllImages() {
@@ -2317,7 +2569,12 @@ function buildItemPrompt(item, guideline) {
     ? `\n\n[나에 대한 배경 정보 — ${guideline.name}]\n${guideline.content}`
     : '';
   const tags = (item.tags||[]).join(', ') || '없음';
-  const hasMemo = item.memo && item.memo.trim();
+
+  const memoText = (item.memos || [])
+    .filter(m => m.content)
+    .map(m => m.title ? `[${m.title}]\n${m.content}` : m.content)
+    .join('\n\n---\n\n');
+  const hasMemo = memoText.trim().length > 0;
 
   return `당신은 실용적인 크리에이터 조력자입니다.${glBlock}
 
@@ -2327,7 +2584,7 @@ ${item.url ? `링크: ${item.url}` : ''}
 ${tags !== '없음' ? `태그: ${tags}` : ''}
 
 [메모 — 핵심 인풋]
-${hasMemo ? item.memo.trim() : '(메모 없음)'}
+${hasMemo ? memoText : '(메모 없음)'}
 
 ---
 위 메모를 실제로 적용한 결과물을 만들어주세요.
@@ -2358,31 +2615,21 @@ function saveSuggestionAsCard(text, sourceItem) {
 function saveSuggestionAsMemo(text) {
   const item = state.items.find(i=>i.id===state.currentItemId);
   if (!item) return;
+  if (!item.memos) item.memos = [];
 
-  // Append to data
-  const separator = `\n\n--- AI 제안 (${new Date().toLocaleDateString('ko-KR')}) ---\n`;
-  item.memo = (item.memo ? item.memo + separator : '') + text;
+  // Add as a new memo card with AI label
+  const memo = {
+    id: 'm_' + Date.now(),
+    title: `AI 제안 — ${new Date().toLocaleDateString('ko-KR')}`,
+    content: text
+  };
+  item.memos.push(memo);
   saveToLocal();
 
-  // Update textarea
-  const ta = document.getElementById('detail-memo-textarea');
-  ta.value = item.memo;
-  autoResize(ta);
+  const container = document.getElementById('detail-memos-container');
+  container.appendChild(makeMemoCard(memo));
 
-  // Add a visual AI section below memo (in addition to updating textarea)
-  const memoWrap = ta.closest('.detail-memo');
-  // Remove any existing appended AI block
-  memoWrap.querySelectorAll('.memo-ai-block').forEach(el => el.remove());
-  const block = document.createElement('div');
-  block.className = 'memo-ai-block';
-  block.style.cssText = 'margin-top:12px;padding-top:12px;border-top:1px dashed var(--border-strong);';
-  block.innerHTML = `
-    <div style="font-size:10px;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-hint);margin-bottom:8px;">✦ AI 제안</div>
-    <div style="font-size:13px;line-height:1.75;color:var(--text);white-space:pre-wrap;">${text}</div>
-  `;
-  memoWrap.appendChild(block);
-
-  // Hide the suggestion panel
+  // Hide suggestion panel
   document.getElementById('detail-suggest-area').innerHTML = '';
   showToast('메모에 추가되었습니다');
 }
