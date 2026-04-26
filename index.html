@@ -1238,7 +1238,7 @@
         </div>
         <div id="ai-tag-hint" class="ai-suggestion" style="display:none;"></div>
       </div>
-      <div class="field">
+      <div class="field" id="input-memo-field">
         <label>메모</label>
         <textarea id="input-memo" rows="3" placeholder="간단한 메모..."></textarea>
       </div>
@@ -1376,9 +1376,6 @@
   <div class="detail-topbar">
     <button class="btn-icon" onclick="closeDetail()">← 뒤로</button>
     <span style="flex:1"></span>
-    <button class="btn-icon" id="detail-btn-download" onclick="downloadAllImages()">↓ 이미지 다운로드</button>
-    <button class="btn-primary" onclick="openDetailSuggest()" style="background: var(--text-muted);">✦ 맞춤 제안</button>
-    <button class="btn-icon" onclick="toggleDetailChat()">💬 AI 대화</button>
     <button class="btn-icon" onclick="editCurrentItem()">편집</button>
     <button class="btn-icon" style="color:var(--danger);" onclick="deleteCurrentItem()">삭제</button>
   </div>
@@ -1389,7 +1386,14 @@
       <span class="detail-date" id="detail-date"></span>
     </div>
     <div class="detail-link" id="detail-link"></div>
-    <div class="card-tags" id="detail-tags" style="margin: 12px 0 20px;"></div>
+    <div class="card-tags" id="detail-tags" style="margin: 12px 0 16px;"></div>
+
+    <!-- Action bar -->
+    <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:20px;">
+      <button class="btn-icon" id="detail-btn-download" onclick="downloadAllImages()" style="display:none;">↓ 이미지 다운로드</button>
+      <button class="btn-icon" onclick="openDetailSuggest()">✦ 맞춤 제안</button>
+      <button class="btn-icon" onclick="toggleDetailChat()">💬 AI 대화</button>
+    </div>
 
     <div id="detail-images-section">
       <div class="detail-images-header">
@@ -1938,7 +1942,10 @@ function openAddModal(editItem = null) {
   document.getElementById('input-url').value = editItem?.url || '';
   document.getElementById('input-title').value = editItem?.title || '';
   document.getElementById('input-images').value = (editItem?.images || []).join('\n');
-  document.getElementById('input-memo').value = editItem?.memo || '';
+  // 메모는 상세 페이지에서만 편집 — 편집 모달에서는 숨김
+  document.getElementById('input-memo').value = '';
+  const memoField = document.getElementById('input-memo-field');
+  if (memoField) memoField.style.display = editItem ? 'none' : 'block';
   document.getElementById('url-fetch-status').style.display = 'none';
   document.getElementById('ai-tag-hint').style.display = 'none';
 
@@ -2202,6 +2209,10 @@ async function saveItem() {
 
   const images = document.getElementById('input-images').value.split('\n').map(s=>s.trim()).filter(Boolean);
 
+  const existingItem = state.editingItemId
+    ? state.items.find(i => i.id === state.editingItemId)
+    : null;
+
   const item = {
     id: state.editingItemId || ('i_' + Date.now()),
     title,
@@ -2210,10 +2221,13 @@ async function saveItem() {
     folder: document.getElementById('input-folder').value,
     guideline: document.getElementById('input-guideline').value,
     tags: [...state.pendingTags],
-    memo: document.getElementById('input-memo').value,
-    createdAt: state.editingItemId ?
-      state.items.find(i=>i.id===state.editingItemId)?.createdAt || Date.now() :
-      Date.now()
+    // 편집 시 기존 memos 유지, 신규 추가 시만 input-memo 반영
+    memos: existingItem
+      ? (existingItem.memos || [])
+      : (document.getElementById('input-memo').value.trim()
+          ? [{ id: 'm_' + Date.now(), title: '', content: document.getElementById('input-memo').value.trim() }]
+          : []),
+    createdAt: existingItem?.createdAt || Date.now()
   };
 
   if (state.editingItemId) {
