@@ -1934,14 +1934,11 @@ function renderGrid() {
   }
 
   grid.innerHTML = items.map(item => {
+    const thumb = makeTypoThumb(item.title);
     const imgs = item.images || [];
-    // If images exist use first image, fallback to typo thumb (also on error)
-    const thumb = imgs[0]
-      ? `<img src="${imgs[0]}" alt=""
-           style="width:100%;height:100%;object-fit:cover;display:block;"
-           onerror="this.parentElement.innerHTML='${makeTypoThumb(item.title).replace(/'/g, "\\'")}'">` 
-      : makeTypoThumb(item.title);
-    const countBadge = imgs.length > 1 ? `<span class="card-img-count">${imgs.length}</span>` : '';
+    const countBadge = imgs.length > 0
+      ? `<span class="card-img-count">⬚ ${imgs.length}</span>`
+      : '';
     const tags = (item.tags||[]).slice(0,3).map(t=>`<span class="tag">${t}</span>`).join('');
     return `<div class="card" onclick="openDetail('${item.id}')">
       <div class="card-thumb">${thumb}${countBadge}</div>
