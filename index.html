@@ -1398,8 +1398,28 @@
     <div id="detail-images-section">
       <div class="detail-images-header">
         <span class="section-label">이미지</span>
+        <button class="btn-tiny" onclick="toggleImageEdit()" id="btn-image-edit">편집</button>
       </div>
       <div class="detail-images" id="detail-images"></div>
+      <!-- Image edit panel (hidden by default) -->
+      <div id="detail-image-edit" style="display:none; margin-top:10px;">
+        <div id="img-dropzone-detail"
+          style="border:1.5px dashed var(--border-strong);border-radius:var(--radius-sm);padding:12px;text-align:center;cursor:pointer;margin-bottom:8px;"
+          onclick="document.getElementById('img-file-input-detail').click()"
+          ondragover="event.preventDefault();this.style.background='var(--accent-soft)'"
+          ondragleave="this.style.background=''"
+          ondrop="handleDetailImageDrop(event)">
+          <input type="file" id="img-file-input-detail" accept="image/*" multiple style="display:none" onchange="handleDetailImageFiles(this.files)">
+          <span style="font-size:12px;color:var(--text-hint);">클릭하거나 이미지를 드래그해서 추가</span>
+          <div id="detail-upload-status" style="font-size:11px;color:var(--text-muted);margin-top:4px;font-family:var(--mono);"></div>
+        </div>
+        <div style="display:flex;gap:6px;">
+          <input type="text" id="detail-img-url-input" placeholder="이미지 URL 입력 후 Enter"
+            style="flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:7px 10px;font-size:13px;color:var(--text);font-family:var(--sans);outline:none;"
+            onkeydown="if(event.key==='Enter')addDetailImageUrl()">
+          <button class="btn-icon" onclick="addDetailImageUrl()">추가</button>
+        </div>
+      </div>
     </div>
 
     <div class="detail-images-header" style="margin-top:24px;">
@@ -2269,12 +2289,9 @@ function openDetail(id) {
   // clear previous suggestion
   document.getElementById('detail-suggest-area').innerHTML = '';
 
-  const imgs = item.images || [];
-  document.getElementById('detail-images').innerHTML = imgs.map(src =>
-    `<img src="${src}" alt="" onclick="openLightbox('${src}')" onerror="this.style.display='none'">`
-  ).join('');
-  document.getElementById('detail-images-section').style.display = imgs.length ? 'block' : 'none';
-  document.getElementById('detail-btn-download').style.display = imgs.length ? 'flex' : 'none';
+  renderDetailImages();
+  document.getElementById('detail-images-section').style.display = 'block';
+  document.getElementById('detail-btn-download').style.display = (item.images||[]).length ? 'flex' : 'none';
 
   // Migrate old single memo → memos array
   if (!item.memos) {
@@ -3156,6 +3173,109 @@ function handleShareTarget() {
     }
     showToast('공유된 링크가 자동으로 입력되었습니다');
   }, 300);
+}
+
+// ─── Detail Image Management ──────────────────────────────────────────────────
+function renderDetailImages() {
+  const item = state.items.find(i => i.id === state.currentItemId);
+  if (!item) return;
+  const imgs = item.images || [];
+  const isEditing = document.getElementById('detail-image-edit')?.style.display !== 'none';
+  const container = document.getElementById('detail-images');
+
+  if (imgs.length === 0 && !isEditing) {
+    container.innerHTML = '<p style="font-size:12px;color:var(--text-hint);padding:4px 0 8px;">이미지가 없습니다. 편집을 눌러 추가하세요.</p>';
+    return;
+  }
+
+  container.innerHTML = imgs.map((src, i) => `
+    <div style="position:relative;">
+      <img src="${src}" alt="" onclick="openLightbox('${src}')"
+        onerror="this.style.display='none'"
+        style="width:100%;border-radius:var(--radius-sm);border:1px solid var(--border);cursor:zoom-in;display:block;">
+      ${isEditing ? `<button onclick="deleteDetailImage(${i})"
+        style="position:absolute;top:5px;right:5px;background:rgba(0,0,0,0.55);border:none;color:#fff;border-radius:50%;width:24px;height:24px;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;">×</button>` : ''}
+    </div>
+  `).join('');
+}
+
+function toggleImageEdit() {
+  const panel = document.getElementById('detail-image-edit');
+  const btn = document.getElementById('btn-image-edit');
+  const isOpen = panel.style.display !== 'none';
+  panel.style.display = isOpen ? 'none' : 'block';
+  btn.textContent = isOpen ? '편집' : '완료';
+  renderDetailImages(); // re-render to show/hide delete buttons
+}
+
+function deleteDetailImage(index) {
+  const item = state.items.find(i => i.id === state.currentItemId);
+  if (!item) return;
+  item.images.splice(index, 1);
+  saveToLocal();
+  renderDetailImages();
+  renderGrid();
+  document.getElementById('detail-btn-download').style.display =
+    item.images.length ? 'flex' : 'none';
+}
+
+function addDetailImageUrl() {
+  const input = document.getElementById('detail-img-url-input');
+  const url = input.value.trim();
+  if (!url) return;
+  const item = state.items.find(i => i.id === state.currentItemId);
+  if (!item) return;
+  if (!item.images) item.images = [];
+  item.images.push(url);
+  saveToLocal();
+  renderDetailImages();
+  renderGrid();
+  input.value = '';
+  document.getElementById('detail-btn-download').style.display = 'flex';
+}
+
+function handleDetailImageDrop(e) {
+  e.preventDefault();
+  e.currentTarget.style.background = '';
+  handleDetailImageFiles(e.dataTransfer.files);
+}
+
+async function handleDetailImageFiles(files) {
+  const { gistToken, imageRepo } = state.settings;
+  const statusEl = document.getElementById('detail-upload-status');
+
+  if (!gistToken || !imageRepo) {
+    // No GitHub config — store as object URLs (temporary, session only)
+    showToast('GitHub 설정이 없어 임시 저장됩니다. 설정에서 GitHub Token을 입력하세요.');
+  }
+
+  const item = state.items.find(i => i.id === state.currentItemId);
+  if (!item) return;
+  if (!item.images) item.images = [];
+
+  for (let i = 0; i < files.length; i++) {
+    statusEl.textContent = `${i+1}/${files.length} 업로드 중...`;
+    try {
+      let url;
+      if (gistToken && imageRepo) {
+        const [owner, repo] = imageRepo.split('/');
+        url = await uploadViaContentsAPI(files[i], owner, repo, gistToken);
+      } else {
+        url = URL.createObjectURL(files[i]);
+      }
+      item.images.push(url);
+    } catch(e) {
+      showToast(`업로드 실패: ${e.message}`);
+    }
+  }
+
+  saveToLocal();
+  renderDetailImages();
+  renderGrid();
+  statusEl.textContent = `✓ ${files.length}장 추가됨`;
+  document.getElementById('detail-btn-download').style.display =
+    item.images.length ? 'flex' : 'none';
+  setTimeout(() => { statusEl.textContent = ''; }, 2500);
 }
 
 // ─── Detail Chat ──────────────────────────────────────────────────────────────
